@@ -1,4 +1,4 @@
-# Trello Clone
+# TaskFlow
 
 A full-stack Kanban project management app that closely replicates Trello's UI/UX built with React, Node.js/Express, and MySQL.
 
