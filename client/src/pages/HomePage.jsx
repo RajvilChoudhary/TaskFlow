@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getBoards, createBoard, deleteBoard } from '../api';
+import { useAuth } from '../context/AuthContext';
+import InvitationInbox from '../components/ui/InvitationInbox';
 import './HomePage.css';
 
 const BACKGROUNDS = [
@@ -16,11 +18,17 @@ const BACKGROUNDS = [
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   useEffect(() => {
     fetchBoards();
@@ -119,15 +127,27 @@ export default function HomePage() {
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <button className="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-colors">
-            <span className="material-symbols-outlined max-w-[20px] max-h-[20px] leading-none block">notifications</span>
-          </button>
+          {/* Invitation inbox bell */}
+          <InvitationInbox />
           <button className="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-colors">
             <span className="material-symbols-outlined max-w-[20px] max-h-[20px] leading-none block">help</span>
           </button>
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest border border-white/10">
-            <img alt="User avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ3xCQniRUBbHRdBXvql-crTxzUnSQmVcP5v_LUYB8YCUbQIvC7HH9u7btXcAXrXAiAKKcBceckvgehfTHvyzxKL5f_UlEg2YWZX3UwctsAy7GE4WmOanyQq4F7sLtk3jm8VWtpJeh3bV-ZUccoTrlxLOFYR-TAFT3MPGN34u646T2i908bjESIJGtvVOmGa7bZm1RVbMqOr7-lFzh9PKuJNgjVNi-y_kWiAb8qXJyieN6lrZd5wb_C20NBdmQdTpVxEgu3KEGR6FL" referrerPolicy="no-referrer"/>
+          {/* User avatar with initials */}
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs border border-white/20 cursor-pointer select-none"
+            style={{ background: user?.avatar_color || '#7C5CBF' }}
+            title={user?.name || 'You'}
+          >
+            {user?.initials || '?'}
           </div>
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-colors"
+            title="Logout"
+          >
+            <span className="material-symbols-outlined max-w-[20px] max-h-[20px] leading-none block">logout</span>
+          </button>
         </div>
       </header>
 
@@ -160,10 +180,13 @@ export default function HomePage() {
           <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-6">Your Workspaces</h3>
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center ghost-border shadow-inner">
-                <span className="text-primary font-bold text-lg">E</span>
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center shadow-inner font-bold text-white text-sm"
+                style={{ background: user?.avatar_color || '#7C5CBF' }}
+              >
+                {user?.initials || '?'}
               </div>
-              <h2 className="font-bold text-on-surface" style={{ fontSize: '1.25rem' }}>The Editorial</h2>
+              <h2 className="font-bold text-on-surface" style={{ fontSize: '1.25rem' }}>{user?.name ? `${user.name}'s Workspace` : 'My Workspace'}</h2>
             </div>
             <div className="flex items-center gap-2">
               <button className="flex items-center gap-2 px-3 py-1.5 bg-secondary-container text-on-surface rounded-md text-xs font-medium hover:bg-surface-container-highest transition-colors">
