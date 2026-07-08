@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getBoards, createBoard, deleteBoard } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,8 @@ export default function HomePage() {
   const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
   const [workspaceExpanded, setWorkspaceExpanded] = useState(true);
   const [mainWorkspaceExpanded, setMainWorkspaceExpanded] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
+  const profileRef = useRef(null);
 
   const handleLogout = () => {
     logout();
@@ -34,6 +36,16 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchBoards();
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setShowProfile(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const fetchBoards = async () => {
@@ -152,25 +164,50 @@ export default function HomePage() {
         <div className="flex items-center gap-4">
           {/* Invitation inbox bell */}
           <InvitationInbox />
-          <button className="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-colors">
+          <button className="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-all hover:scale-105 active:scale-95">
             <span className="material-symbols-outlined max-w-[20px] max-h-[20px] leading-none block">help</span>
           </button>
-          {/* User avatar with initials */}
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs border border-white/20 cursor-pointer select-none"
-            style={{ background: user?.avatar_color || '#7C5CBF' }}
-            title={user?.name || 'You'}
-          >
-            {user?.initials || '?'}
+          
+          {/* Interactive User profile dropdown */}
+          <div className="relative" ref={profileRef}>
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-white/20 hover:border-primary cursor-pointer select-none transition-all hover:scale-105 shadow-[0_0_10px_rgba(87,157,255,0.15)] hover:shadow-[0_0_15px_rgba(87,157,255,0.4)]"
+              style={{ background: user?.avatar_color || '#7C5CBF' }}
+              onClick={() => setShowProfile(!showProfile)}
+              title={user?.name || 'Profile'}
+            >
+              {user?.initials || '?'}
+            </div>
+
+            {showProfile && (
+              <div className="absolute top-full right-0 mt-2 w-64 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-4 flex flex-col gap-3 z-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ background: user?.avatar_color || '#7C5CBF' }}>
+                    {user?.initials || '?'}
+                  </div>
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="font-semibold text-sm text-white truncate">{user?.name}</span>
+                    <span className="text-[11px] text-slate-400 truncate">{user?.email}</span>
+                    <span className="self-start text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full mt-1 uppercase tracking-wider">{user?.role}</span>
+                  </div>
+                </div>
+                
+                <div className="h-px bg-white/10 my-1"></div>
+                
+                {user?.role === 'admin' && (
+                  <Link to="/admin" className="flex items-center gap-2 px-3 py-2 text-xs text-slate-200 hover:bg-white/10 hover:text-white rounded-md transition-colors" onClick={() => setShowProfile(false)}>
+                    <span className="material-symbols-outlined text-sm">admin_panel_settings</span>
+                    Admin Panel
+                  </Link>
+                )}
+                
+                <button className="flex items-center gap-2 w-full px-3 py-2 text-xs text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors text-left" onClick={handleLogout}>
+                  <span className="material-symbols-outlined text-sm">logout</span>
+                  Log Out
+                </button>
+              </div>
+            )}
           </div>
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-colors"
-            title="Logout"
-          >
-            <span className="material-symbols-outlined max-w-[20px] max-h-[20px] leading-none block">logout</span>
-          </button>
         </div>
       </header>
 

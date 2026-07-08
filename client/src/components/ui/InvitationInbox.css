@@ -12,17 +12,30 @@
   height: 36px;
   border-radius: 50%;
   color: var(--text-secondary, #8C9BAB);
-  transition: background 0.15s, color 0.15s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
 }
 .inv-bell-btn:hover {
-  background: rgba(255,255,255,0.08);
-  color: var(--text-primary, #B6C2CF);
+  background: rgba(87, 157, 255, 0.12);
+  color: #579DFF;
+  box-shadow: 0 0 10px rgba(87, 157, 255, 0.2);
+  transform: scale(1.06);
 }
 .inv-bell-btn.has-pending {
   color: #579DFF;
+  animation: pulseBell 2s infinite;
+  background: rgba(87, 157, 255, 0.08);
 }
 .inv-bell-btn.has-pending:hover {
-  background: rgba(87, 157, 255, 0.12);
+  background: rgba(87, 157, 255, 0.2);
+  box-shadow: 0 0 14px rgba(87, 157, 255, 0.4);
+}
+
+@keyframes pulseBell {
+  0% { box-shadow: 0 0 0 0 rgba(87, 157, 255, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(87, 157, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(87, 157, 255, 0); }
 }
 
 .inv-badge {
