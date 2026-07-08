@@ -24,6 +24,8 @@ export default function HomePage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
+  const [workspaceExpanded, setWorkspaceExpanded] = useState(true);
+  const [mainWorkspaceExpanded, setMainWorkspaceExpanded] = useState(true);
 
   const handleLogout = () => {
     logout();
@@ -95,13 +97,34 @@ export default function HomePage() {
           <div className="pt-8 px-6 pb-2">
             <h3 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Workspaces</h3>
           </div>
-          <button className="w-full flex items-center justify-between px-4 py-2 mx-2 text-on-surface-variant hover:bg-surface-container-highest rounded-md transition-colors">
+          <button 
+            onClick={() => setWorkspaceExpanded(!workspaceExpanded)} 
+            className="w-full flex items-center justify-between px-4 py-2 mx-2 text-on-surface-variant hover:bg-surface-container-highest rounded-md transition-colors"
+          >
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-tertiary">group</span>
-              <span className="font-medium text-sm">Our Workspace</span>
+              <span className="font-medium text-sm truncate max-w-[140px]" title={user?.name ? `${user.name}'s Workspace` : 'My Workspace'}>
+                {user?.name ? `${user.name}'s Workspace` : 'My Workspace'}
+              </span>
             </div>
-            <span className="material-symbols-outlined text-xs">expand_more</span>
+            <span className="material-symbols-outlined text-xs transition-transform duration-200" style={{ transform: workspaceExpanded ? 'rotate(180deg)' : 'none' }}>
+              expand_more
+            </span>
           </button>
+          
+          {workspaceExpanded && (
+            <div className="pl-12 pr-4 py-1 space-y-1 animation-fadeIn">
+              {boards.map(b => (
+                <Link key={b.id} to={`/board/${b.id}`} className="flex items-center gap-2 text-xs text-on-surface-variant hover:text-on-surface py-1.5 transition-colors truncate">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: b.background }}></span>
+                  <span className="truncate">{b.title}</span>
+                </Link>
+              ))}
+              {boards.length === 0 && (
+                <span className="text-[11px] text-on-surface-variant/50 italic pl-4">No boards yet</span>
+              )}
+            </div>
+          )}
         </nav>
         <div className="mt-auto space-y-1">
           <a className="flex items-center gap-3 px-4 py-2 mx-2 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-md transition-colors" href="#">
@@ -179,14 +202,24 @@ export default function HomePage() {
         <section>
           <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-6">Your Workspaces</h3>
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
+            <div 
+              onClick={() => setMainWorkspaceExpanded(!mainWorkspaceExpanded)}
+              className="flex items-center gap-4 cursor-pointer select-none group"
+            >
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center shadow-inner font-bold text-white text-sm"
+                className="w-10 h-10 rounded-lg flex items-center justify-center shadow-inner font-bold text-white text-sm transition-transform group-hover:scale-105"
                 style={{ background: user?.avatar_color || '#7C5CBF' }}
               >
                 {user?.initials || '?'}
               </div>
-              <h2 className="font-bold text-on-surface" style={{ fontSize: '1.25rem' }}>{user?.name ? `${user.name}'s Workspace` : 'My Workspace'}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-on-surface group-hover:text-primary transition-colors" style={{ fontSize: '1.25rem' }}>
+                  {user?.name ? `${user.name}'s Workspace` : 'My Workspace'}
+                </h2>
+                <span className="material-symbols-outlined text-on-surface-variant transition-transform duration-200" style={{ transform: mainWorkspaceExpanded ? 'rotate(180deg)' : 'none' }}>
+                  expand_more
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button className="flex items-center gap-2 px-3 py-1.5 bg-secondary-container text-on-surface rounded-md text-xs font-medium hover:bg-surface-container-highest transition-colors">
@@ -204,31 +237,33 @@ export default function HomePage() {
             </div>
           </div>
           
-          {/* Board Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {boards.map(board => (
-              <Link to={`/board/${board.id}`} key={board.id} className="group relative bg-surface-container-high rounded-xl overflow-hidden hover:scale-[1.02] transition-transform duration-300 shadow-xl cursor-pointer block h-[140px] border border-white/5">
-                <div className="absolute inset-0 z-0 opacity-60 group-hover:opacity-80 transition-opacity" style={{ background: board.background }}></div>
-                <div className="absolute top-2 right-2 z-20">
-                  <button onClick={(e) => handleDelete(e, board.id)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container/50 text-on-surface-variant hover:bg-error hover:text-on-error transition-colors backdrop-blur px-0 py-0 opacity-0 group-hover:opacity-100">
-                    <span className="material-symbols-outlined text-sm leading-none block">delete</span>
-                  </button>
-                </div>
-                <div className="h-full w-full bg-gradient-to-t from-surface-container-highest via-surface-container/20 to-transparent z-10 relative flex flex-col justify-end">
-                  <div className="p-4 relative z-10 backdrop-blur-[2px]">
-                    <h3 className="font-bold text-on-surface text-sm drop-shadow-md">{board.title}</h3>
+          {mainWorkspaceExpanded && (
+            /* Board Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animation-fadeIn">
+              {boards.map(board => (
+                <Link to={`/board/${board.id}`} key={board.id} className="group relative bg-surface-container-high rounded-xl overflow-hidden hover:scale-[1.02] transition-transform duration-300 shadow-xl cursor-pointer block h-[140px] border border-white/5">
+                  <div className="absolute inset-0 z-0 opacity-60 group-hover:opacity-80 transition-opacity" style={{ background: board.background }}></div>
+                  <div className="absolute top-2 right-2 z-20">
+                    <button onClick={(e) => handleDelete(e, board.id)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container/50 text-on-surface-variant hover:bg-error hover:text-on-error transition-colors backdrop-blur px-0 py-0 opacity-0 group-hover:opacity-100">
+                      <span className="material-symbols-outlined text-sm leading-none block">delete</span>
+                    </button>
                   </div>
-                </div>
-              </Link>
-            ))}
+                  <div className="h-full w-full bg-gradient-to-t from-surface-container-highest via-surface-container/20 to-transparent z-10 relative flex flex-col justify-end">
+                    <div className="p-4 relative z-10 backdrop-blur-[2px]">
+                      <h3 className="font-bold text-on-surface text-sm drop-shadow-md">{board.title}</h3>
+                    </div>
+                  </div>
+                </Link>
+              ))}
 
-            {/* Create New Board Placeholder */}
-            <div onClick={() => setShowCreate(true)} className="group flex flex-col items-center justify-center h-[140px] bg-surface-container rounded-xl ghost-border hover:bg-surface-container-highest hover:border-primary/40 transition-all cursor-pointer">
-              <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors text-3xl mb-2">add_circle</span>
-              <span className="text-xs font-medium text-on-surface-variant group-hover:text-on-surface transition-colors">Create new board</span>
-              <span className="text-[10px] text-on-surface-variant/60 mt-1">Unlimited remaining</span>
+              {/* Create New Board Placeholder */}
+              <div onClick={() => setShowCreate(true)} className="group flex flex-col items-center justify-center h-[140px] bg-surface-container rounded-xl ghost-border hover:bg-surface-container-highest hover:border-primary/40 transition-all cursor-pointer">
+                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors text-3xl mb-2">add_circle</span>
+                <span className="text-xs font-medium text-on-surface-variant group-hover:text-on-surface transition-colors">Create new board</span>
+                <span className="text-[10px] text-on-surface-variant/60 mt-1">Unlimited remaining</span>
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* Asymmetric Detail Section (Design System Bonus) */}
