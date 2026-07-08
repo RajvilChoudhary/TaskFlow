@@ -1,5 +1,5 @@
 /**
- * Centralized configuration for the Trello Clone frontend.
+ * Centralized configuration for the TaskFlow frontend.
  * Uses environment variables for flexibility between development and production.
  */
 

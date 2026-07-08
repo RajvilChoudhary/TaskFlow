@@ -1,10 +1,9 @@
 # TaskFlow
 
-A full-stack Kanban project management app that closely replicates Trello's UI/UX built with React, Node.js/Express, and MySQL.
+A full-stack Kanban project management app with a modern UI/UX built with React, Node.js/Express, and MySQL.
 
 ## 🚀 Live Demo
-- **Frontend (Vercel)**: [trello-clone-two-rose.vercel.app](https://trello-clone-two-rose.vercel.app/)
-- **Backend (Render)**: [trello-backend-uf9n.onrender.com](https://trello-backend-uf9n.onrender.com/)
+- **Frontend (Vercel)**: [taskflow-kanban-task-management.vercel.app](https://taskflow-kanban-task-management.vercel.app/)
 
 ---
 
@@ -85,12 +84,12 @@ PORT=5000
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=your_password
-DB_NAME=trello_clone
+DB_NAME=taskflow
 ```
 
 ### 3. Set Up Database
 
-Create the `trello_clone` database in MySQL, then run:
+Create the `taskflow` database in MySQL, then run:
 
 ```bash
 cd server

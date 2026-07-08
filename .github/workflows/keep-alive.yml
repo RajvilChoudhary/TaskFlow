@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Ping Health Endpoint
         run: |
-          curl -f https://trello-backend-uf9n.onrender.com/api/health
+          curl -f https://your-backend-url.onrender.com/api/health

@@ -110,7 +110,7 @@ export default function Header() {
             <rect x="2" y="13" width="9" height="9" rx="2" fill="#579DFF"/>
             <rect x="13" y="9" width="9" height="13" rx="2" fill="#579DFF"/>
           </svg>
-          <span className="header-logo-text">Trello</span>
+          <span className="header-logo-text">TaskFlow</span>
         </Link>
 
         {/* Boards switcher */}
@@ -202,7 +202,7 @@ export default function Header() {
                         <div className="result-thumb" style={{ background: board.background }}></div>
                         <div className="result-info">
                           <div className="result-title truncate">{board.title}</div>
-                          <div className="result-sub">Trello Workspace</div>
+                          <div className="result-sub">TaskFlow Workspace</div>
                         </div>
                       </div>
                     ))}

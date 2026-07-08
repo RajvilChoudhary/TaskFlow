@@ -1,23 +1,23 @@
 -- ============================================================
--- TRELLO CLONE SEED DATA
+-- TASKFLOW SEED DATA
 -- ============================================================
-USE trello_clone;
+USE taskflow;
 
 -- ============================================================
 -- USERS
 -- ============================================================
 INSERT INTO users (name, email, initials, avatar_color) VALUES
-  ('Rajvil Choudhary', 'rajvil@trelloclone.com', 'RC', '#7C5CBF'),
-  ('Alice Johnson',    'alice@trelloclone.com',   'AJ', '#4BCE97'),
-  ('Bob Smith',        'bob@trelloclone.com',     'BS', '#F5CD47'),
-  ('Carol White',      'carol@trelloclone.com',   'CW', '#F87168'),
-  ('David Brown',      'david@trelloclone.com',   'DB', '#579DFF');
+  ('Rajvil Choudhary', 'rajvil@taskflow.com', 'RC', '#7C5CBF'),
+  ('Alice Johnson',    'alice@taskflow.com',   'AJ', '#4BCE97'),
+  ('Bob Smith',        'bob@taskflow.com',     'BS', '#F5CD47'),
+  ('Carol White',      'carol@taskflow.com',   'CW', '#F87168'),
+  ('David Brown',      'david@taskflow.com',   'DB', '#579DFF');
 
 -- ============================================================
 -- BOARDS  (3 boards for multi-board demo)
 -- ============================================================
 INSERT INTO boards (title, background, created_by) VALUES
-  ('My Trello Board',     'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 1),
+  ('My TaskFlow Board',     'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 1),
   ('Product Roadmap',     'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', 1),
   ('Marketing Campaign',  'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)', 1);
 
@@ -128,7 +128,7 @@ INSERT INTO cards (list_id, board_id, title, description, position, cover_color,
    2, '#579DFF', NULL),
 
   -- Inbox Cards (Board 1)
-  (NULL, 1, 'Have to make a clone of trello', 'UI matching from screenshots', 1, NULL, NULL),
+  (NULL, 1, 'Have to make a clone of TaskFlow', 'UI matching from screenshots', 1, NULL, NULL),
   (NULL, 1, 'See it, send it, save it for later', 'Random thought', 2, NULL, NULL);
 
 -- ============================================================

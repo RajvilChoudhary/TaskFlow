@@ -69,7 +69,7 @@ export default function HomePage() {
             <rect x="2" y="13" width="9" height="9" rx="2" fill="#579DFF"/>
             <rect x="13" y="9" width="9" height="13" rx="2" fill="#579DFF"/>
           </svg>
-          <h2 className="font-headline font-bold text-on-surface leading-tight text-xl tracking-tight">Trello</h2>
+          <h2 className="font-headline font-bold text-on-surface leading-tight text-xl tracking-tight">TaskFlow</h2>
         </div>
         <nav className="flex-1 space-y-1">
           <a className="flex items-center gap-3 px-4 py-2 mx-2 transition-all duration-200 bg-secondary-container text-on-surface rounded-md" href="#">
