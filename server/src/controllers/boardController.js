@@ -1,15 +1,19 @@
 const pool = require('../config/db');
 
-// GET /api/boards  — all boards with member count
+// GET /api/boards  — user's boards with member count
 const getAllBoards = async (req, res, next) => {
   try {
+    const userId = req.user.id;
     const [boards] = await pool.execute(`
       SELECT b.*, u.name AS creator_name,
         (SELECT COUNT(*) FROM board_members bm WHERE bm.board_id = b.id) AS member_count
       FROM boards b
       JOIN users u ON b.created_by = u.id
+      WHERE b.created_by = ? OR b.id IN (
+        SELECT board_id FROM board_members WHERE user_id = ?
+      )
       ORDER BY b.created_at DESC
-    `);
+    `, [userId, userId]);
     res.json(boards);
   } catch (err) { next(err); }
 };
@@ -18,18 +22,22 @@ const getAllBoards = async (req, res, next) => {
 const createBoard = async (req, res, next) => {
   try {
     const { title, background } = req.body;
-    const created_by = 1; // default user
+    const created_by = req.user.id; // Use authenticated user ID
     const bg = background || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
     const [result] = await pool.execute(
       'INSERT INTO boards (title, background, created_by) VALUES (?, ?, ?)',
       [title, bg, created_by]
     );
     const boardId = result.insertId;
+    console.log('Board created with ID:', boardId);
+    
     // Add creator as admin board member
     await pool.execute(
       'INSERT INTO board_members (board_id, user_id, role) VALUES (?, ?, ?)',
       [boardId, created_by, 'admin']
     );
+    console.log('Board member added');
+    
     // Seed default labels
     const defaultLabels = [
       ['Bug', '#F87168'], ['Feature', '#579DFF'], ['Enhancement', '#4BCE97'],
@@ -41,22 +49,39 @@ const createBoard = async (req, res, next) => {
         [boardId, name, color]
       );
     }
+    console.log('Labels created');
+    
     // Log activity
     await pool.execute(
       'INSERT INTO activity_log (board_id, user_id, action, data) VALUES (?, ?, ?, ?)',
       [boardId, created_by, 'created_board', JSON.stringify({ title })]
     );
+    console.log('Activity logged');
+    
     const [rows] = await pool.execute('SELECT * FROM boards WHERE id = ?', [boardId]);
     res.status(201).json(rows[0]);
-  } catch (err) { next(err); }
+  } catch (err) { 
+    console.error('Create board error:', err);
+    next(err); 
+  }
 };
 
-// GET /api/boards/:id  — full board tree
+// GET /api/boards/:id  — full board tree with access control
 const getBoardById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const [[board]] = await pool.execute('SELECT * FROM boards WHERE id = ?', [id]);
-    if (!board) return res.status(404).json({ error: 'Board not found' });
+    const userId = req.user.id;
+    
+    // Check if user has access to this board
+    const [[board]] = await pool.execute(`
+      SELECT * FROM boards 
+      WHERE id = ? AND (
+        created_by = ? OR 
+        id IN (SELECT board_id FROM board_members WHERE user_id = ?)
+      )
+    `, [id, userId, userId]);
+    
+    if (!board) return res.status(403).json({ error: 'Access denied' });
 
     const [lists] = await pool.execute(
       'SELECT * FROM lists WHERE board_id = ? AND archived = 0 ORDER BY position ASC',
@@ -128,13 +153,23 @@ const getBoardById = async (req, res, next) => {
 const updateBoard = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
     const { title, background } = req.body;
+    
+    // Check if user owns the board
+    const [[board]] = await pool.execute(
+      'SELECT * FROM boards WHERE id = ? AND created_by = ?',
+      [id, userId]
+    );
+    
+    if (!board) return res.status(403).json({ error: 'Access denied' });
+    
     await pool.execute(
       'UPDATE boards SET title = COALESCE(?, title), background = COALESCE(?, background) WHERE id = ?',
       [title || null, background || null, id]
     );
-    const [[board]] = await pool.execute('SELECT * FROM boards WHERE id = ?', [id]);
-    res.json(board);
+    const [[updatedBoard]] = await pool.execute('SELECT * FROM boards WHERE id = ?', [id]);
+    res.json(updatedBoard);
   } catch (err) { next(err); }
 };
 
@@ -142,6 +177,16 @@ const updateBoard = async (req, res, next) => {
 const deleteBoard = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
+    
+    // Check if user owns the board
+    const [[board]] = await pool.execute(
+      'SELECT * FROM boards WHERE id = ? AND created_by = ?',
+      [id, userId]
+    );
+    
+    if (!board) return res.status(403).json({ error: 'Access denied' });
+    
     await pool.execute('DELETE FROM boards WHERE id = ?', [id]);
     res.json({ message: 'Board deleted' });
   } catch (err) { next(err); }

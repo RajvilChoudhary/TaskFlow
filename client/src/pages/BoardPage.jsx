@@ -7,6 +7,7 @@ import CardModal from '../components/card/CardModal';
 import FilterBar from '../components/ui/FilterBar';
 import InboxSidebar from '../components/board/InboxSidebar';
 import BottomNav from '../components/layout/BottomNav';
+import ShareModal from '../components/board/ShareModal';
 import './BoardPage.css';
 
 export default function BoardPage() {
@@ -27,6 +28,7 @@ export default function BoardPage() {
   const [boardTitle, setBoardTitle] = useState('');
   const [filterState, setFilterState] = useState({ label_ids: [], member_ids: [], due: '' });
   const [showFilter, setShowFilter] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Split-screen views — by default only Board is active (Inbox off)
   const [activeViews, setActiveViews] = useState({ inbox: false, planner: false, board: true });
@@ -289,6 +291,10 @@ export default function BoardPage() {
                 </div>
 
                 <div className="board-header-right">
+                  <button className={`btn btn-secondary btn-sm`} onClick={() => setShowShareModal(true)}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5zm-8.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm11 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
+                    Share
+                  </button>
                   <button className={`btn btn-secondary btn-sm ${showFilter ? 'active' : ''}`} onClick={() => setShowFilter(v => !v)}>
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/></svg>
                     Filters
@@ -345,6 +351,13 @@ export default function BoardPage() {
         <CardModal
           card={openCard} labels={labels} boardMembers={members}
           onClose={() => setOpenCard(null)} onCardUpdated={handleCardUpdated} onCardDeleted={handleCardDeleted} onLabelsChanged={(newLabels) => setLabels(newLabels)}
+        />
+      )}
+
+      {showShareModal && (
+        <ShareModal 
+          boardId={id} 
+          onClose={() => setShowShareModal(false)} 
         />
       )}
     </div>

@@ -6,6 +6,15 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Add auth interceptor to include JWT token in requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // ===================== BOARDS =====================
 export const getBoards       = ()           => api.get('/boards');
 export const createBoard     = (data)       => api.post('/boards', data);
@@ -64,5 +73,21 @@ export const deleteAttachment  = (id) => api.delete(`/attachments/${id}`);
 // ===================== MEMBERS =====================
 export const getMembers = () => api.get('/members');
 export const globalSearch = (q) => api.get('/search', { params: { q } });
+
+// ===================== AUTH =====================
+export const login = (data) => api.post('/auth/login', data);
+export const register = (data) => api.post('/auth/register', data);
+export const getCurrentUser = () => api.get('/auth/me');
+
+// ===================== INVITATIONS =====================
+export const sendInvitation = (data) => api.post('/invitations', data);
+export const getInvitations = () => api.get('/invitations');
+export const acceptInvitation = (id) => api.put(`/invitations/${id}/accept`);
+export const declineInvitation = (id) => api.put(`/invitations/${id}/decline`);
+
+// ===================== ADMIN =====================
+export const getAllUsers = () => api.get('/admin/users');
+export const updateUserRole = (id, role) => api.put(`/admin/users/${id}/role`, { role });
+export const getUserStats = () => api.get('/admin/stats');
 
 export default api;
