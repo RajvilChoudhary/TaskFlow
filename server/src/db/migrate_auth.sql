@@ -41,3 +41,14 @@ CREATE TABLE IF NOT EXISTS board_invitations (
   FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL,
   UNIQUE KEY unique_pending_invitation (board_id, invited_email, status)
 );
+
+-- Create notifications table for general app notifications
+CREATE TABLE IF NOT EXISTS notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  type VARCHAR(50) NOT NULL,
+  data JSON NOT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

@@ -31,6 +31,7 @@ app.use('/api/comments',        require('./routes/comments'));
 app.use('/api/attachments',     require('./routes/attachments'));
 app.use('/api/members',         require('./routes/members'));
 app.use('/api/search',          require('./routes/search'));
+app.use('/api/notifications',   require('./routes/notifications'));
 
 // Health check
 app.get('/api/health', async (req, res) => {

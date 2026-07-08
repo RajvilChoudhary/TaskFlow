@@ -90,4 +90,9 @@ export const getAllUsers = () => api.get('/admin/users');
 export const updateUserRole = (id, role) => api.put(`/admin/users/${id}/role`, { role });
 export const getUserStats = () => api.get('/admin/stats');
 
+// ===================== NOTIFICATIONS =====================
+export const getNotifications   = ()    => api.get('/notifications');
+export const markNotificationRead = (id) => api.patch(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => api.patch('/notifications/read-all');
+
 export default api;
