@@ -140,4 +140,54 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getCurrentUser };
+/**
+ * Guest login - creates or logs into a persistent guest account
+ */
+const guestLogin = async (req, res) => {
+  try {
+    const guestEmail = 'guest@taskflow.com';
+    let [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [guestEmail]);
+    
+    let user;
+    if (users.length === 0) {
+      const password_hash = await bcrypt.hash('guest123', 10);
+      const [result] = await pool.execute(
+        'INSERT INTO users (name, email, initials, password_hash, avatar_color, role) VALUES (?, ?, ?, ?, ?, ?)',
+        ['Guest User', guestEmail, 'GU', password_hash, '#4EDE8A', 'user']
+      );
+      user = {
+        id: result.insertId,
+        name: 'Guest User',
+        email: guestEmail,
+        initials: 'GU',
+        avatar_color: '#4EDE8A',
+        role: 'user'
+      };
+    } else {
+      user = users[0];
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role || 'user' },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        initials: user.initials,
+        avatar_color: user.avatar_color,
+        role: user.role || 'user'
+      },
+      token
+    });
+  } catch (error) {
+    console.error('Guest login error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = { register, login, guestLogin, getCurrentUser };

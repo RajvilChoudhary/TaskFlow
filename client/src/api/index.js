@@ -80,6 +80,7 @@ export const globalSearch = (q) => api.get('/search', { params: { q } });
 // ===================== AUTH =====================
 export const login = (data) => api.post('/auth/login', data);
 export const register = (data) => api.post('/auth/register', data);
+export const guestLogin = () => api.post('/auth/guest');
 export const getCurrentUser = () => api.get('/auth/me');
 
 // ===================== INVITATIONS =====================

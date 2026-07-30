@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { login as apiLogin, register as apiRegister, getCurrentUser } from '../api';
+import { login as apiLogin, register as apiRegister, guestLogin as apiGuestLogin, getCurrentUser } from '../api';
 
 const AuthContext = createContext(null);
 
@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
         })
         .catch(() => {
           localStorage.removeItem('token');
+          localStorage.removeItem('user');
           setToken(null);
         })
         .finally(() => setLoading(false));
@@ -42,6 +43,15 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
+  const loginAsGuest = async () => {
+    const res = await apiGuestLogin();
+    setToken(res.data.token);
+    setUser(res.data.user);
+    localStorage.setItem('token', res.data.token);
+    localStorage.setItem('user', JSON.stringify(res.data.user));
+    return res.data;
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -50,7 +60,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, register, loginAsGuest, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -109,7 +109,7 @@ export default function Header() {
     <header className="header">
       {/* Left */}
       <div className="header-left">
-        <Link to="/" className="header-logo">
+        <Link to="/dashboard" className="header-logo">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <rect x="2" y="2" width="9" height="9" rx="2" fill="#579DFF"/>
             <rect x="13" y="2" width="9" height="5" rx="2" fill="#579DFF"/>
