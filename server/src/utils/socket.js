@@ -9,15 +9,12 @@ const broadcastToBoard = (req, boardId, type, payload) => {
   const room = `board:${boardId}`;
 
   if (senderSocketId) {
-    const senderSocket = io.sockets.sockets.get(senderSocketId);
-    if (senderSocket) {
-      senderSocket.to(room).emit('board-updated', { type, payload });
-      return;
-    }
+    // Broadcast to room excluding sender tab
+    io.to(room).except(senderSocketId).emit('board-updated', { type, payload });
+  } else {
+    // Broadcast to everyone in room
+    io.to(room).emit('board-updated', { type, payload });
   }
-
-  // Fallback: broadcast to everyone in the room
-  io.to(room).emit('board-updated', { type, payload });
 };
 
 /**
