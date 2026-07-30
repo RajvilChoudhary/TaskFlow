@@ -9,6 +9,7 @@
 }
 
 .auth-card {
+  position: relative;
   background: var(--bg-card);
   border-radius: 12px;
   padding: 40px;
@@ -16,6 +17,20 @@
   max-width: 420px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.back-home-link {
+  display: inline-block;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  margin-bottom: 16px;
+  transition: color 0.2s;
+}
+
+.back-home-link:hover {
+  color: var(--ds-text);
 }
 
 .auth-header {

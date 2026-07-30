@@ -141,7 +141,7 @@ const getCurrentUser = async (req, res) => {
 };
 
 /**
- * Guest login - creates or logs into a persistent guest account
+ * Guest login - creates or logs into a persistent guest account with template boards
  */
 const guestLogin = async (req, res) => {
   try {
@@ -153,18 +153,50 @@ const guestLogin = async (req, res) => {
       const password_hash = await bcrypt.hash('guest123', 10);
       const [result] = await pool.execute(
         'INSERT INTO users (name, email, initials, password_hash, avatar_color, role) VALUES (?, ?, ?, ?, ?, ?)',
-        ['Guest User', guestEmail, 'GU', password_hash, '#4EDE8A', 'user']
+        ['Guest Explorer', guestEmail, 'GE', password_hash, '#4EDE8A', 'user']
       );
       user = {
         id: result.insertId,
-        name: 'Guest User',
+        name: 'Guest Explorer',
         email: guestEmail,
-        initials: 'GU',
+        initials: 'GE',
         avatar_color: '#4EDE8A',
         role: 'user'
       };
     } else {
       user = users[0];
+    }
+
+    // Ensure guest user has template boards
+    const [guestBoards] = await pool.execute('SELECT id FROM boards WHERE created_by = ?', [user.id]);
+    if (guestBoards.length === 0) {
+      // 1. Create Roadmap Template Board
+      const [b1] = await pool.execute(
+        'INSERT INTO boards (title, background, created_by) VALUES (?, ?, ?)',
+        ['🚀 Product Roadmap (Demo)', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', user.id]
+      );
+      await pool.execute('INSERT INTO board_members (board_id, user_id, role) VALUES (?, ?, ?)', [b1.insertId, user.id, 'owner']);
+
+      const [l1] = await pool.execute('INSERT INTO lists (board_id, title, position) VALUES (?, ?, ?)', [b1.insertId, '📋 Backlog', 1]);
+      const [l2] = await pool.execute('INSERT INTO lists (board_id, title, position) VALUES (?, ?, ?)', [b1.insertId, '⚙️ In Progress', 2]);
+      const [l3] = await pool.execute('INSERT INTO lists (board_id, title, position) VALUES (?, ?, ?)', [b1.insertId, '✅ Completed', 3]);
+
+      await pool.execute('INSERT INTO cards (list_id, board_id, title, description, position) VALUES (?, ?, ?, ?, ?)', [l1.insertId, b1.insertId, 'Design New Landing Page', 'Create a modern WebGL glassmorphism design', 1]);
+      await pool.execute('INSERT INTO cards (list_id, board_id, title, description, position) VALUES (?, ?, ?, ?, ?)', [l2.insertId, b1.insertId, 'Real-time WebSocket Sync', 'Sync updates live between collaborators', 1]);
+      await pool.execute('INSERT INTO cards (list_id, board_id, title, description, position) VALUES (?, ?, ?, ?, ?)', [l3.insertId, b1.insertId, 'JWT Auth & Guest Mode', 'Persistent session and instant guest login', 1]);
+
+      // 2. Create Team Tasks Template Board
+      const [b2] = await pool.execute(
+        'INSERT INTO boards (title, background, created_by) VALUES (?, ?, ?)',
+        ['🎯 Team Sprint Board (Demo)', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', user.id]
+      );
+      await pool.execute('INSERT INTO board_members (board_id, user_id, role) VALUES (?, ?, ?)', [b2.insertId, user.id, 'owner']);
+
+      const [bl1] = await pool.execute('INSERT INTO lists (board_id, title, position) VALUES (?, ?, ?)', [b2.insertId, 'To Do', 1]);
+      const [bl2] = await pool.execute('INSERT INTO lists (board_id, title, position) VALUES (?, ?, ?)', [b2.insertId, 'Doing', 2]);
+
+      await pool.execute('INSERT INTO cards (list_id, board_id, title, description, position) VALUES (?, ?, ?, ?, ?)', [bl1.insertId, b2.insertId, 'Try dragging cards across lists', 'You can move cards between columns seamlessly', 1]);
+      await pool.execute('INSERT INTO cards (list_id, board_id, title, description, position) VALUES (?, ?, ?, ?, ?)', [bl2.insertId, b2.insertId, 'Open card modal to add comments & checklists', 'Click on any card to explore detailed features', 1]);
     }
 
     const token = jwt.sign(

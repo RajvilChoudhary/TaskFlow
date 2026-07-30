@@ -34,6 +34,9 @@ export default function LoginPage() {
   return (
     <div className="auth-container">
       <div className="auth-card">
+        <Link to="/" className="back-home-link">
+          ← Back to Home
+        </Link>
         <div className="auth-header">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
             <rect x="2" y="2" width="9" height="9" rx="2" fill="#579DFF"/>
