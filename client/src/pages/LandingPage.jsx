@@ -169,8 +169,8 @@ export default function LandingPage() {
                     <button onClick={() => navigate('/register')} className="btn-hero-primary">
                       Get Started Now
                     </button>
-                    <button onClick={handleGuestExplore} className="btn-hero-guest" disabled={guestLoading}>
-                      {guestLoading ? 'Connecting...' : '⚡ Explore as Guest'}
+                    <button onClick={() => navigate('/login')} className="btn-hero-guest">
+                      Log In
                     </button>
                   </>
                 )}
@@ -266,8 +266,8 @@ export default function LandingPage() {
             <div className="cta-box glass-card">
               <h2>Ready to accelerate your workflow?</h2>
               <div className="cta-buttons">
-                <button onClick={handleGuestExplore} className="btn-cta-guest" disabled={guestLoading}>
-                  {guestLoading ? 'Connecting...' : 'Explore as Guest'}
+                <button onClick={() => navigate('/register')} className="btn-hero-primary">
+                  Get Started Free
                 </button>
               </div>
             </div>

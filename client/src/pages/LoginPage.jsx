@@ -92,16 +92,18 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
 
-          <div className="auth-divider"><span>OR</span></div>
+          <div className="auth-divider"><span>DEMO GUEST CREDENTIALS</span></div>
 
           <button 
             type="button" 
             className="guest-auth-button" 
-            disabled={loading}
-            onClick={handleGuestLogin}
+            onClick={() => setFormData({ email: 'guest@taskflow.com', password: 'guest123' })}
           >
-            ⚡ Continue as Guest (Instant Access)
+            🔑 Autofill Guest Credentials
           </button>
+          <p style={{ textAlign: 'center', fontSize: '12px', color: '#958da1', marginTop: '6px' }}>
+            Email: <b>guest@taskflow.com</b> | Password: <b>guest123</b>
+          </p>
         </form>
         
         <p className="auth-footer">

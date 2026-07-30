@@ -133,22 +133,17 @@ export default function RegisterPage() {
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
-
-          <div className="auth-divider"><span>OR</span></div>
-
-          <button 
-            type="button" 
-            className="guest-auth-button" 
-            disabled={loading}
-            onClick={handleGuestLogin}
-          >
-            ⚡ Continue as Guest (Instant Access)
-          </button>
         </form>
         
         <p className="auth-footer">
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
+
+        <div style={{ marginTop: '20px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p style={{ fontSize: '12px', color: '#dae2fd', margin: 0 }}>
+            💡 Want to explore without registering? <Link to="/login" style={{ color: '#4EDE8A', fontWeight: 'bold' }}>Sign in as Guest</Link> using demo credentials.
+          </p>
+        </div>
       </div>
     </div>
   );
