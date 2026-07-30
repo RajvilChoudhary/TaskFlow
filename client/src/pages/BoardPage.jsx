@@ -3,7 +3,6 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { getBoard, createList, updateList, reorderList, deleteList, createCard, updateCard, moveCard, updateBoard } from '../api';
 import api from '../api';
-import { config } from '../config';
 import { io } from 'socket.io-client';
 import ListColumn from '../components/board/ListColumn';
 import CardModal from '../components/card/CardModal';
@@ -35,9 +34,15 @@ export default function BoardPage() {
 
   const socketRef = useRef(null);
   const openCardRef = useRef(null);
-  const socketBoardRef = useRef(null); // tracks which boardId the socket is currently joined for
+  const fetchBoardRef = useRef(null);       // always holds latest fetchBoard — avoids stale closure inside socket handler
+  const socketBoardRef = useRef(null);      // tracks which boardId the socket is currently joined for
   const [cardRefreshTrigger, setCardRefreshTrigger] = useState(0);
   const [activeUsers, setActiveUsers] = useState([]); // presence: other users viewing the same board
+
+  // Keep fetchBoardRef in sync whenever useCallback recreates fetchBoard
+  useEffect(() => {
+    fetchBoardRef.current = fetchBoard;
+  }, [fetchBoard]);
 
   // Sync openCard state to ref to prevent re-subscribing sockets on modal toggles
   useEffect(() => {
@@ -72,21 +77,26 @@ export default function BoardPage() {
   useEffect(() => { fetchBoard(); }, [fetchBoard]);
 
   // ── Socket connection effect ───────────────────────────────────────────────
-  // Runs once after board is loaded. Only connects if the board has >1 member.
-  // Avoids reconnecting on every fetchBoard() call by using a ref guard.
+  // Key design decisions:
+  //   1. 'loading' in deps so this fires after the board data is ready.
+  //   2. socketBoardRef ref guard prevents reconnecting on every fetchBoard().
+  //   3. Connect to window.location.origin so Vite's WebSocket proxy is used —
+  //      this fixes cross-origin failures in incognito / different browser profiles.
+  //   4. fetchBoardRef used inside the handler to avoid stale closures.
   useEffect(() => {
     if (loading || !board || !members.length) return;
 
-    // Single-user board → no socket needed
+    // Single-user board — no socket needed (saves server resources)
     if (members.length <= 1) return;
 
-    // Already connected to this board → don't reconnect
+    // Already connected to this board — don't reconnect
     if (socketBoardRef.current === id) return;
 
-    const socketUrl = config.ASSET_URL || 'http://localhost:5000';
+    // Connect through the same origin so Vite's proxy routes the WebSocket
+    const socketUrl = window.location.origin;
     const socket = io(socketUrl, {
-      transports: ['websocket'],
-      reconnectionAttempts: 5,
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
     });
 
@@ -95,10 +105,8 @@ export default function BoardPage() {
 
     socket.on('connect', () => {
       console.log(`🔌 Collaborative connection opened. Socket ID: ${socket.id}`);
-      // Attach socket ID to Axios so server can skip broadcasting back to this tab
       api.defaults.headers.common['X-Socket-ID'] = socket.id;
 
-      // Get current user from localStorage (set at login)
       let user = null;
       try {
         const raw = localStorage.getItem('user');
@@ -113,8 +121,8 @@ export default function BoardPage() {
       console.log('⚡ Collaborative live update received:', event);
       const { payload } = event;
 
-      // Silent refetch to keep board canvas up-to-date
-      fetchBoard();
+      // Use ref to always get latest fetchBoard (avoids stale closure)
+      fetchBoardRef.current?.();
 
       // If the changed card is currently open in the modal, refresh modal details too
       const currentOpenCard = openCardRef.current;
@@ -126,18 +134,18 @@ export default function BoardPage() {
       }
     });
 
-    // Presence updates — who is currently viewing this board
+    // Presence — list of users currently viewing this board
     socket.on('presence-update', ({ activeUsers: users }) => {
       console.log('👥 Presence update:', users);
       setActiveUsers(users || []);
     });
 
     socket.on('connect_error', (err) => {
-      console.warn('Socket connection error:', err.message);
+      console.warn('🔌 Socket connection error:', err.message);
     });
 
-    socket.on('disconnect', () => {
-      console.log('🔌 Collaborative connection disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('🔌 Collaborative connection disconnected:', reason);
       delete api.defaults.headers.common['X-Socket-ID'];
     });
 
@@ -147,11 +155,10 @@ export default function BoardPage() {
       delete api.defaults.headers.common['X-Socket-ID'];
       socketBoardRef.current = null;
     };
-    // ⚠️  Intentionally exclude 'board', 'members', 'loading', 'fetchBoard' from deps.
-    // Those change on every data fetch and would cause an infinite reconnect loop.
-    // This effect must only run once per board ID visit.
+    // 'loading' triggers re-run after board data loads.
+    // socketBoardRef prevents duplicate connections on fetchBoard re-calls.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, loading]);
 
   // Auto-open card from ?openCard= query param (from search)
   useEffect(() => {
