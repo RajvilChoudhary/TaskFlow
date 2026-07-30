@@ -78,10 +78,7 @@ export default function BoardPage() {
   //   3. serverBase derived from api.defaults.baseURL works for both dev and production.
   //   4. fetchBoard is stable (useCallback) so calling it directly has no stale-closure risk.
   useEffect(() => {
-    if (loading || !board || !members.length) return;
-
-    // Single-user board — no socket needed (saves server resources)
-    if (members.length <= 1) return;
+    if (loading || !board) return;
 
     // Already connected to this board — don't reconnect
     if (socketBoardRef.current === id) return;
@@ -100,7 +97,7 @@ export default function BoardPage() {
 
     socket.on('connect', () => {
       console.log(`🔌 Collaborative connection opened. Socket ID: ${socket.id}`);
-      api.defaults.headers.common['X-Socket-ID'] = socket.id;
+      window.activeSocketId = socket.id;
 
       let user = null;
       try {
@@ -141,13 +138,13 @@ export default function BoardPage() {
 
     socket.on('disconnect', (reason) => {
       console.log('🔌 Collaborative connection disconnected:', reason);
-      delete api.defaults.headers.common['X-Socket-ID'];
+      window.activeSocketId = null;
     });
 
     return () => {
       socket.emit('leave-board', id);
       socket.disconnect();
-      delete api.defaults.headers.common['X-Socket-ID'];
+      window.activeSocketId = null;
       socketBoardRef.current = null;
     };
     // 'loading' triggers re-run after board data loads.

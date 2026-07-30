@@ -6,11 +6,14 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Add auth interceptor to include JWT token in requests
+// Add auth and socket interceptor to include JWT token and Socket ID in requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (window.activeSocketId) {
+    config.headers['X-Socket-ID'] = window.activeSocketId;
   }
   return config;
 });

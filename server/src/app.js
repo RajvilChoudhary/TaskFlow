@@ -7,11 +7,13 @@ const { Server } = require('socket.io');
 const pool     = require('./config/db');
 require('dotenv').config();
 
+const corsOrigin = process.env.CLIENT_URL || true;
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: corsOrigin,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true
   }
@@ -50,7 +52,7 @@ io.on('connection', (socket) => {
 });
 
 // Middleware
-app.use(cors({ origin: true, credentials: true })); // origin: true allows any requesting origin
+app.use(cors({ origin: corsOrigin, credentials: true })); // origin: true allows any requesting origin
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
