@@ -64,7 +64,7 @@ export default function BoardPage() {
       setMembers(res.data.members || []);
       setLists(res.data.lists || []);
       setInboxCards(res.data.inboxCards || []);
-    } catch { navigate('/'); }
+    } catch { navigate('/dashboard'); }
     finally { setLoading(false); }
   }, [id, navigate]);
 

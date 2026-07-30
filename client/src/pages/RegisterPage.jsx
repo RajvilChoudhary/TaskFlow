@@ -33,7 +33,7 @@ export default function RegisterPage() {
     
     try {
       await register(formData.name, formData.email, formData.password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
     } finally {
