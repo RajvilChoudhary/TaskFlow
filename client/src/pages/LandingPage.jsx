@@ -123,11 +123,11 @@ export default function LandingPage() {
       <header className="landing-header">
         <div className="landing-header-inner">
           <div className="logo-container">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="9" height="9" rx="2" fill="#7C3AED"/>
-              <rect x="13" y="2" width="9" height="5" rx="2" fill="#4EDEA3"/>
-              <rect x="2" y="13" width="9" height="9" rx="2" fill="#4EDEA3"/>
-              <rect x="13" y="9" width="9" height="13" rx="2" fill="#7C3AED"/>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="2" width="9" height="9" rx="2" fill="#579DFF"/>
+              <rect x="13" y="2" width="9" height="5" rx="2" fill="#579DFF"/>
+              <rect x="2" y="13" width="9" height="9" rx="2" fill="#579DFF"/>
+              <rect x="13" y="9" width="9" height="13" rx="2" fill="#579DFF"/>
             </svg>
             <span className="logo-text">TaskFlow</span>
           </div>
@@ -135,7 +135,7 @@ export default function LandingPage() {
           <div className="header-actions">
             {user ? (
               <button onClick={() => navigate('/dashboard')} className="btn-primary">
-                Go to App
+                Go to Dashboard
               </button>
             ) : (
               <>
@@ -170,7 +170,7 @@ export default function LandingPage() {
                       Get Started Now
                     </button>
                     <button onClick={handleGuestExplore} className="btn-hero-guest" disabled={guestLoading}>
-                      {guestLoading ? 'Entering Guest Mode...' : '⚡ Instant Guest Demo'}
+                      {guestLoading ? 'Connecting...' : '⚡ Explore as Guest'}
                     </button>
                   </>
                 )}
@@ -266,12 +266,6 @@ export default function LandingPage() {
             <div className="cta-box glass-card">
               <h2>Ready to accelerate your workflow?</h2>
               <div className="cta-buttons">
-                <button onClick={() => navigate('/register')} className="btn-cta-primary">
-                  Sign Up Free
-                </button>
-                <button onClick={() => navigate('/login')} className="btn-cta-secondary">
-                  Log In
-                </button>
                 <button onClick={handleGuestExplore} className="btn-cta-guest" disabled={guestLoading}>
                   {guestLoading ? 'Connecting...' : 'Explore as Guest'}
                 </button>
@@ -280,33 +274,6 @@ export default function LandingPage() {
           </section>
         </div>
       </main>
-
-      {/* Footer Navigation */}
-      <footer className="landing-footer glass-card">
-        <div className="footer-nav">
-          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="nav-item active">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="3" y="3" width="7" height="7"/>
-              <rect x="14" y="3" width="7" height="7"/>
-              <rect x="14" y="14" width="7" height="7"/>
-              <rect x="3" y="14" width="7" height="7"/>
-            </svg>
-            <span>Features</span>
-          </button>
-          <button onClick={handleGuestExplore} className="nav-item">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-            </svg>
-            <span>Demo Guest</span>
-          </button>
-          <Link to="/login" className="nav-item">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-            </svg>
-            <span>Account</span>
-          </Link>
-        </div>
-      </footer>
     </div>
   );
 }

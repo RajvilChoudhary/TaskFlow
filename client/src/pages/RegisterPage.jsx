@@ -5,7 +5,7 @@ import './RegisterPage.css';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { user, register } = useAuth();
   const [formData, setFormData] = useState({ 
     name: '', 
     email: '', 
@@ -14,6 +14,12 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
