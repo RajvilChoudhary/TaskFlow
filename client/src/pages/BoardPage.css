@@ -82,6 +82,44 @@
 .board-members .avatar { border: 2px solid rgba(255,255,255,0.4); margin-left: -4px; }
 .board-header-right .btn-secondary.active { background: rgba(255,255,255,0.3); color: #fff; }
 
+/* LIVE PRESENCE INDICATOR */
+.board-presence {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 20px;
+  padding: 3px 10px 3px 6px;
+}
+.presence-dot-ring {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+  animation: presence-pulse 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes presence-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(74, 222, 128, 0.7); }
+  70%  { box-shadow: 0 0 0 7px rgba(74, 222, 128, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(74, 222, 128, 0);   }
+}
+.presence-avatars { display: flex; }
+.presence-avatar  {
+  margin-left: -6px;
+  border: 2px solid #4ade80 !important;
+  box-shadow: 0 0 5px rgba(74, 222, 128, 0.5);
+}
+.presence-avatar:first-child { margin-left: 0; }
+.presence-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4ade80;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
 /* BOARD CANVAS */
 .board-canvas {
   flex: 1;

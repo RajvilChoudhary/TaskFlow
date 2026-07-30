@@ -20,21 +20,32 @@ const io = new Server(server, {
 app.set('io', io);
 
 // Socket.io Room & Client Handlers
+const { broadcastPresence } = require('./utils/socket');
+
 io.on('connection', (socket) => {
   console.log(`🔌 Collaborative user connected: ${socket.id}`);
 
-  socket.on('join-board', (boardId) => {
+  // Client sends { boardId, user: { id, name, initials, avatar_color } }
+  socket.on('join-board', ({ boardId, user }) => {
     socket.join(`board:${boardId}`);
-    console.log(`📥 Socket ${socket.id} joined room board:${boardId}`);
+    socket.boardId = boardId;  // track which board this socket is in
+    socket.userData = user || null;
+    console.log(`📥 Socket ${socket.id} (${user?.name || 'unknown'}) joined room board:${boardId}`);
+    broadcastPresence(io, boardId);
   });
 
   socket.on('leave-board', (boardId) => {
     socket.leave(`board:${boardId}`);
     console.log(`📤 Socket ${socket.id} left room board:${boardId}`);
+    broadcastPresence(io, boardId);
   });
 
   socket.on('disconnect', () => {
     console.log(`🔌 Collaborative user disconnected: ${socket.id}`);
+    // Broadcast updated presence if they were in a board room
+    if (socket.boardId) {
+      broadcastPresence(io, socket.boardId);
+    }
   });
 });
 

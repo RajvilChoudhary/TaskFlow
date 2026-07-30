@@ -16,8 +16,31 @@ const broadcastToBoard = (req, boardId, type, payload) => {
     }
   }
 
-  // Fallback to broadcasting to everyone in the room
+  // Fallback: broadcast to everyone in the room
   io.to(room).emit('board-updated', { type, payload });
 };
 
-module.exports = { broadcastToBoard };
+/**
+ * Broadcast the current list of active users in a board room.
+ * Called whenever a user joins or leaves a board.
+ */
+const broadcastPresence = (io, boardId) => {
+  const room = `board:${boardId}`;
+  const roomSockets = io.sockets.adapter.rooms.get(room);
+  if (!roomSockets) {
+    io.to(room).emit('presence-update', { activeUsers: [] });
+    return;
+  }
+
+  const activeUsers = [];
+  for (const socketId of roomSockets) {
+    const socket = io.sockets.sockets.get(socketId);
+    if (socket && socket.userData) {
+      activeUsers.push({ socketId, ...socket.userData });
+    }
+  }
+
+  io.to(room).emit('presence-update', { boardId, activeUsers });
+};
+
+module.exports = { broadcastToBoard, broadcastPresence };

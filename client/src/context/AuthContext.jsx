@@ -29,6 +29,7 @@ export function AuthProvider({ children }) {
     setToken(res.data.token);
     setUser(res.data.user);
     localStorage.setItem('token', res.data.token);
+    localStorage.setItem('user', JSON.stringify(res.data.user));
     return res.data;
   };
 
@@ -37,6 +38,7 @@ export function AuthProvider({ children }) {
     setToken(res.data.token);
     setUser(res.data.user);
     localStorage.setItem('token', res.data.token);
+    localStorage.setItem('user', JSON.stringify(res.data.user));
     return res.data;
   };
 
@@ -44,6 +46,7 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   return (

@@ -35,7 +35,9 @@ export default function BoardPage() {
 
   const socketRef = useRef(null);
   const openCardRef = useRef(null);
+  const socketBoardRef = useRef(null); // tracks which boardId the socket is currently joined for
   const [cardRefreshTrigger, setCardRefreshTrigger] = useState(0);
+  const [activeUsers, setActiveUsers] = useState([]); // presence: other users viewing the same board
 
   // Sync openCard state to ref to prevent re-subscribing sockets on modal toggles
   useEffect(() => {
@@ -69,59 +71,87 @@ export default function BoardPage() {
 
   useEffect(() => { fetchBoard(); }, [fetchBoard]);
 
-  // Conditionally initialize socket connection for multi-user boards to save resources
+  // ── Socket connection effect ───────────────────────────────────────────────
+  // Runs once after board is loaded. Only connects if the board has >1 member.
+  // Avoids reconnecting on every fetchBoard() call by using a ref guard.
   useEffect(() => {
-    if (loading || !board) return;
+    if (loading || !board || !members.length) return;
 
-    if (members.length > 1) {
-      const socketUrl = config.ASSET_URL || 'http://localhost:5000';
-      const socket = io(socketUrl, {
-        transports: ['websocket'],
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
-      });
+    // Single-user board → no socket needed
+    if (members.length <= 1) return;
 
-      socketRef.current = socket;
+    // Already connected to this board → don't reconnect
+    if (socketBoardRef.current === id) return;
 
-      socket.on('connect', () => {
-        console.log(`🔌 Collaborative connection opened. Socket ID: ${socket.id}`);
-        // Attach socket ID to API headers so server can exclude this client from broadcasts
-        api.defaults.headers.common['X-Socket-ID'] = socket.id;
-        
-        // Join this specific board's room
-        socket.emit('join-board', id);
-      });
+    const socketUrl = config.ASSET_URL || 'http://localhost:5000';
+    const socket = io(socketUrl, {
+      transports: ['websocket'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
-      // Listen for board-wide updates
-      socket.on('board-updated', (event) => {
-        console.log('⚡ Collaborative live update received:', event);
-        const { type, payload } = event;
+    socketRef.current = socket;
+    socketBoardRef.current = id;
 
-        // 1. Silent board refetch to update background structures
-        fetchBoard();
+    socket.on('connect', () => {
+      console.log(`🔌 Collaborative connection opened. Socket ID: ${socket.id}`);
+      // Attach socket ID to Axios so server can skip broadcasting back to this tab
+      api.defaults.headers.common['X-Socket-ID'] = socket.id;
 
-        // 2. If the updated card is currently open in the modal, trigger a detail refresh
-        const currentOpenCard = openCardRef.current;
-        if (currentOpenCard) {
-          const updatedCardId = payload.card_id || payload.id;
-          if (updatedCardId && String(updatedCardId) === String(currentOpenCard.id)) {
-            setCardRefreshTrigger(prev => prev + 1);
-          }
+      // Get current user from localStorage (set at login)
+      let user = null;
+      try {
+        const raw = localStorage.getItem('user');
+        if (raw) user = JSON.parse(raw);
+      } catch (_) {}
+
+      socket.emit('join-board', { boardId: id, user });
+    });
+
+    // Live board events from other collaborators
+    socket.on('board-updated', (event) => {
+      console.log('⚡ Collaborative live update received:', event);
+      const { payload } = event;
+
+      // Silent refetch to keep board canvas up-to-date
+      fetchBoard();
+
+      // If the changed card is currently open in the modal, refresh modal details too
+      const currentOpenCard = openCardRef.current;
+      if (currentOpenCard) {
+        const updatedCardId = payload?.card_id || payload?.id;
+        if (updatedCardId && String(updatedCardId) === String(currentOpenCard.id)) {
+          setCardRefreshTrigger(prev => prev + 1);
         }
-      });
+      }
+    });
 
-      socket.on('disconnect', () => {
-        console.log('🔌 Collaborative connection disconnected');
-        delete api.defaults.headers.common['X-Socket-ID'];
-      });
+    // Presence updates — who is currently viewing this board
+    socket.on('presence-update', ({ activeUsers: users }) => {
+      console.log('👥 Presence update:', users);
+      setActiveUsers(users || []);
+    });
 
-      return () => {
-        socket.emit('leave-board', id);
-        socket.disconnect();
-        delete api.defaults.headers.common['X-Socket-ID'];
-      };
-    }
-  }, [id, members.length, board, loading, fetchBoard]);
+    socket.on('connect_error', (err) => {
+      console.warn('Socket connection error:', err.message);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('🔌 Collaborative connection disconnected');
+      delete api.defaults.headers.common['X-Socket-ID'];
+    });
+
+    return () => {
+      socket.emit('leave-board', id);
+      socket.disconnect();
+      delete api.defaults.headers.common['X-Socket-ID'];
+      socketBoardRef.current = null;
+    };
+    // ⚠️  Intentionally exclude 'board', 'members', 'loading', 'fetchBoard' from deps.
+    // Those change on every data fetch and would cause an infinite reconnect loop.
+    // This effect must only run once per board ID visit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Auto-open card from ?openCard= query param (from search)
   useEffect(() => {
@@ -348,12 +378,32 @@ export default function BoardPage() {
                       {board?.title}
                     </h1>
                   )}
+                  {/* Static board members */}
                   <div className="board-members">
                     {members.slice(0, 4).map(m => (
                       <div key={m.id} className="avatar avatar-sm" style={{ background: m.avatar_color }} title={m.name}>{m.initials}</div>
                     ))}
                     {members.length > 4 && <div className="avatar avatar-sm" style={{ background: 'var(--bg-input)' }}>+{members.length - 4}</div>}
                   </div>
+                  {/* Live presence — active collaborators right now */}
+                  {activeUsers.length > 0 && (
+                    <div className="board-presence" title="Currently viewing this board">
+                      <span className="presence-dot-ring" />
+                      <div className="presence-avatars">
+                        {activeUsers.slice(0, 5).map(u => (
+                          <div
+                            key={u.socketId}
+                            className="avatar avatar-sm presence-avatar"
+                            style={{ background: u.avatar_color || '#7C5CBF' }}
+                            title={`${u.name || 'Someone'} (active)`}
+                          >
+                            {u.initials || '?'}
+                          </div>
+                        ))}
+                      </div>
+                      <span className="presence-label">{activeUsers.length} online</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="board-header-right">
