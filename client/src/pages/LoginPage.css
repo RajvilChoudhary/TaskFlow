@@ -126,6 +126,45 @@
   cursor: not-allowed;
 }
 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-divider span {
+  padding: 0 10px;
+}
+
+.guest-auth-button {
+  background: rgba(78, 222, 138, 0.15);
+  color: #4EDE8A;
+  border: 1px solid rgba(78, 222, 138, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.guest-auth-button:hover:not(:disabled) {
+  background: rgba(78, 222, 138, 0.25);
+  transform: translateY(-1px);
+}
+
 .auth-footer {
   text-align: center;
   margin-top: 24px;

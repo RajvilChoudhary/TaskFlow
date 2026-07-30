@@ -5,7 +5,7 @@ import './RegisterPage.css';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { user, register } = useAuth();
+  const { user, register, loginAsGuest } = useAuth();
   const [formData, setFormData] = useState({ 
     name: '', 
     email: '', 
@@ -20,6 +20,19 @@ export default function RegisterPage() {
       navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
+
+  const handleGuestLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginAsGuest();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Guest login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,7 +93,7 @@ export default function RegisterPage() {
           </div>
           
           <div className="form-group">
-            <label htmlFor="email">Email.</label>
+            <label htmlFor="email">Email</label>
             <input
               id="email"
               type="email"
@@ -119,6 +132,17 @@ export default function RegisterPage() {
           
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Creating account...' : 'Sign Up'}
+          </button>
+
+          <div className="auth-divider"><span>OR</span></div>
+
+          <button 
+            type="button" 
+            className="guest-auth-button" 
+            disabled={loading}
+            onClick={handleGuestLogin}
+          >
+            ⚡ Continue as Guest (Instant Access)
           </button>
         </form>
         

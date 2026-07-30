@@ -5,7 +5,7 @@ import './LoginPage.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { user, login } = useAuth();
+  const { user, login, loginAsGuest } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,6 +15,19 @@ export default function LoginPage() {
       navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
+
+  const handleGuestLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginAsGuest();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Guest login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,6 +90,17 @@ export default function LoginPage() {
           
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+
+          <div className="auth-divider"><span>OR</span></div>
+
+          <button 
+            type="button" 
+            className="guest-auth-button" 
+            disabled={loading}
+            onClick={handleGuestLogin}
+          >
+            ⚡ Continue as Guest (Instant Access)
           </button>
         </form>
         
