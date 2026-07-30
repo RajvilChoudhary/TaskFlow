@@ -34,15 +34,9 @@ export default function BoardPage() {
 
   const socketRef = useRef(null);
   const openCardRef = useRef(null);
-  const fetchBoardRef = useRef(null);       // always holds latest fetchBoard — avoids stale closure inside socket handler
   const socketBoardRef = useRef(null);      // tracks which boardId the socket is currently joined for
   const [cardRefreshTrigger, setCardRefreshTrigger] = useState(0);
-  const [activeUsers, setActiveUsers] = useState([]); // presence: other users viewing the same board
-
-  // Keep fetchBoardRef in sync whenever useCallback recreates fetchBoard
-  useEffect(() => {
-    fetchBoardRef.current = fetchBoard;
-  }, [fetchBoard]);
+  const [activeUsers, setActiveUsers] = useState([]);
 
   // Sync openCard state to ref to prevent re-subscribing sockets on modal toggles
   useEffect(() => {
@@ -54,13 +48,13 @@ export default function BoardPage() {
 
   const toggleView = (view) => {
     setActiveViews(prev => {
-      // If toggling off the ONLY active view, do nothing (must have at least one view open)
       const next = { ...prev, [view]: !prev[view] };
       if (!next.inbox && !next.planner && !next.board) return prev;
       return next;
     });
   };
 
+  // fetchBoard must be declared before the socket effect so it can be safely referenced
   const fetchBoard = useCallback(async () => {
     try {
       const res = await getBoard(id);
@@ -76,13 +70,13 @@ export default function BoardPage() {
 
   useEffect(() => { fetchBoard(); }, [fetchBoard]);
 
+
   // ── Socket connection effect ───────────────────────────────────────────────
   // Key design decisions:
-  //   1. 'loading' in deps so this fires after the board data is ready.
+  //   1. 'loading' in deps triggers this after board data is ready.
   //   2. socketBoardRef ref guard prevents reconnecting on every fetchBoard().
-  //   3. Connect to window.location.origin so Vite's WebSocket proxy is used —
-  //      this fixes cross-origin failures in incognito / different browser profiles.
-  //   4. fetchBoardRef used inside the handler to avoid stale closures.
+  //   3. serverBase derived from api.defaults.baseURL works for both dev and production.
+  //   4. fetchBoard is stable (useCallback) so calling it directly has no stale-closure risk.
   useEffect(() => {
     if (loading || !board || !members.length) return;
 
@@ -92,9 +86,10 @@ export default function BoardPage() {
     // Already connected to this board — don't reconnect
     if (socketBoardRef.current === id) return;
 
-    // Connect through the same origin so Vite's proxy routes the WebSocket
-    const socketUrl = window.location.origin;
-    const socket = io(socketUrl, {
+    // Socket URL: strip /api from the API base to get the server root
+    // Works for both local dev (port 5000) and production (same origin)
+    const serverBase = api.defaults.baseURL.replace(/\/api$/, '');
+    const socket = io(serverBase, {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
@@ -121,8 +116,8 @@ export default function BoardPage() {
       console.log('⚡ Collaborative live update received:', event);
       const { payload } = event;
 
-      // Use ref to always get latest fetchBoard (avoids stale closure)
-      fetchBoardRef.current?.();
+      // fetchBoard is stable (useCallback with [id, navigate]) — safe to call directly
+      fetchBoard();
 
       // If the changed card is currently open in the modal, refresh modal details too
       const currentOpenCard = openCardRef.current;
