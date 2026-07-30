@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { broadcastToBoard } = require('../utils/socket');
 
 // GET /api/cards/:id/comments
 const getComments = async (req, res, next) => {
@@ -31,6 +32,10 @@ const addComment = async (req, res, next) => {
       FROM comments c JOIN users u ON u.id = c.user_id
       WHERE c.id = ?
     `, [result.insertId]);
+
+    // Broadcast comment addition
+    broadcastToBoard(req, card.board_id, 'COMMENT_ADD', { card_id: Number(card_id), comment: row });
+
     res.status(201).json(row);
   } catch (err) { next(err); }
 };
@@ -38,7 +43,18 @@ const addComment = async (req, res, next) => {
 // DELETE /api/comments/:id
 const deleteComment = async (req, res, next) => {
   try {
-    await pool.execute('DELETE FROM comments WHERE id = ?', [req.params.id]);
+    const commentId = req.params.id;
+    const [[comment]] = await pool.execute('SELECT card_id FROM comments WHERE id = ?', [commentId]);
+    
+    await pool.execute('DELETE FROM comments WHERE id = ?', [commentId]);
+
+    if (comment) {
+      const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [comment.card_id]);
+      if (card) {
+        broadcastToBoard(req, card.board_id, 'COMMENT_DELETE', { card_id: comment.card_id, comment_id: Number(commentId) });
+      }
+    }
+
     res.json({ message: 'Comment deleted' });
   } catch (err) { next(err); }
 };

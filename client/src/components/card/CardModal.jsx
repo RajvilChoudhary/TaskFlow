@@ -18,7 +18,7 @@ const LABEL_COLORS = [
   '#579DFF','#6CC3E0','#94C748','#E774BB','#8C9BAB',
 ];
 
-export default function CardModal({ card: initialCard, labels: boardLabels, boardMembers, onClose, onCardUpdated, onCardDeleted, onLabelsChanged }) {
+export default function CardModal({ card: initialCard, labels: boardLabels, boardMembers, onClose, onCardUpdated, onCardDeleted, onLabelsChanged, refreshTrigger }) {
   const [card, setCard]             = useState(null);
   const [loading, setLoading]       = useState(true);
   const [labels, setLabels]         = useState(boardLabels);
@@ -47,7 +47,7 @@ export default function CardModal({ card: initialCard, labels: boardLabels, boar
 
   useEffect(() => {
     fetchCard();
-  }, [initialCard.id]);
+  }, [initialCard.id, refreshTrigger]);
 
   const fetchCard = async () => {
     try {

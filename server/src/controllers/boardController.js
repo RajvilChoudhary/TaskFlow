@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { broadcastToBoard } = require('../utils/socket');
 
 // GET /api/boards  — user's boards with member count
 const getAllBoards = async (req, res, next) => {
@@ -169,6 +170,7 @@ const updateBoard = async (req, res, next) => {
       [title || null, background || null, id]
     );
     const [[updatedBoard]] = await pool.execute('SELECT * FROM boards WHERE id = ?', [id]);
+    broadcastToBoard(req, id, 'BOARD_UPDATE', updatedBoard);
     res.json(updatedBoard);
   } catch (err) { next(err); }
 };
@@ -188,6 +190,7 @@ const deleteBoard = async (req, res, next) => {
     if (!board) return res.status(403).json({ error: 'Access denied' });
     
     await pool.execute('DELETE FROM boards WHERE id = ?', [id]);
+    broadcastToBoard(req, id, 'BOARD_DELETE', { id });
     res.json({ message: 'Board deleted' });
   } catch (err) { next(err); }
 };

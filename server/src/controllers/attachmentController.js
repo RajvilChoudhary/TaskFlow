@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { broadcastToBoard } = require('../utils/socket');
 const path = require('path');
 const fs   = require('fs');
 
@@ -18,6 +19,12 @@ const uploadAttachment = async (req, res, next) => {
       [card_id, card.board_id, 1, 'added_attachment', JSON.stringify({ name: req.file.originalname })]
     );
     const [[attachment]] = await pool.execute('SELECT * FROM attachments WHERE id = ?', [result.insertId]);
+
+    // Broadcast attachment addition
+    if (card) {
+      broadcastToBoard(req, card.board_id, 'ATTACHMENT_ADD', { card_id: Number(card_id), attachment });
+    }
+
     res.status(201).json(attachment);
   } catch (err) { next(err); }
 };
@@ -25,11 +32,20 @@ const uploadAttachment = async (req, res, next) => {
 // DELETE /api/attachments/:id
 const deleteAttachment = async (req, res, next) => {
   try {
-    const [[attachment]] = await pool.execute('SELECT * FROM attachments WHERE id = ?', [req.params.id]);
+    const attId = req.params.id;
+    const [[attachment]] = await pool.execute('SELECT * FROM attachments WHERE id = ?', [attId]);
     if (!attachment) return res.status(404).json({ error: 'Not found' });
+    
     const filePath = path.join(__dirname, '../../uploads', attachment.filename);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    await pool.execute('DELETE FROM attachments WHERE id = ?', [req.params.id]);
+    
+    await pool.execute('DELETE FROM attachments WHERE id = ?', [attId]);
+
+    const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [attachment.card_id]);
+    if (card) {
+      broadcastToBoard(req, card.board_id, 'ATTACHMENT_DELETE', { card_id: attachment.card_id, attachment_id: Number(attId) });
+    }
+
     res.json({ message: 'Attachment deleted' });
   } catch (err) { next(err); }
 };

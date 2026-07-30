@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { getBoard, createList, updateList, reorderList, deleteList, createCard, updateCard, moveCard, updateBoard } from '../api';
+import api from '../api';
+import { config } from '../config';
+import { io } from 'socket.io-client';
 import ListColumn from '../components/board/ListColumn';
 import CardModal from '../components/card/CardModal';
 import FilterBar from '../components/ui/FilterBar';
@@ -30,6 +33,15 @@ export default function BoardPage() {
   const [showFilter, setShowFilter] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
+  const socketRef = useRef(null);
+  const openCardRef = useRef(null);
+  const [cardRefreshTrigger, setCardRefreshTrigger] = useState(0);
+
+  // Sync openCard state to ref to prevent re-subscribing sockets on modal toggles
+  useEffect(() => {
+    openCardRef.current = openCard;
+  }, [openCard]);
+
   // Split-screen views — by default only Board is active (Inbox off)
   const [activeViews, setActiveViews] = useState({ inbox: false, planner: false, board: true });
 
@@ -56,6 +68,60 @@ export default function BoardPage() {
   }, [id, navigate]);
 
   useEffect(() => { fetchBoard(); }, [fetchBoard]);
+
+  // Conditionally initialize socket connection for multi-user boards to save resources
+  useEffect(() => {
+    if (loading || !board) return;
+
+    if (members.length > 1) {
+      const socketUrl = config.ASSET_URL || 'http://localhost:5000';
+      const socket = io(socketUrl, {
+        transports: ['websocket'],
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      });
+
+      socketRef.current = socket;
+
+      socket.on('connect', () => {
+        console.log(`🔌 Collaborative connection opened. Socket ID: ${socket.id}`);
+        // Attach socket ID to API headers so server can exclude this client from broadcasts
+        api.defaults.headers.common['X-Socket-ID'] = socket.id;
+        
+        // Join this specific board's room
+        socket.emit('join-board', id);
+      });
+
+      // Listen for board-wide updates
+      socket.on('board-updated', (event) => {
+        console.log('⚡ Collaborative live update received:', event);
+        const { type, payload } = event;
+
+        // 1. Silent board refetch to update background structures
+        fetchBoard();
+
+        // 2. If the updated card is currently open in the modal, trigger a detail refresh
+        const currentOpenCard = openCardRef.current;
+        if (currentOpenCard) {
+          const updatedCardId = payload.card_id || payload.id;
+          if (updatedCardId && String(updatedCardId) === String(currentOpenCard.id)) {
+            setCardRefreshTrigger(prev => prev + 1);
+          }
+        }
+      });
+
+      socket.on('disconnect', () => {
+        console.log('🔌 Collaborative connection disconnected');
+        delete api.defaults.headers.common['X-Socket-ID'];
+      });
+
+      return () => {
+        socket.emit('leave-board', id);
+        socket.disconnect();
+        delete api.defaults.headers.common['X-Socket-ID'];
+      };
+    }
+  }, [id, members.length, board, loading, fetchBoard]);
 
   // Auto-open card from ?openCard= query param (from search)
   useEffect(() => {
@@ -351,6 +417,7 @@ export default function BoardPage() {
         <CardModal
           card={openCard} labels={labels} boardMembers={members}
           onClose={() => setOpenCard(null)} onCardUpdated={handleCardUpdated} onCardDeleted={handleCardDeleted} onLabelsChanged={(newLabels) => setLabels(newLabels)}
+          refreshTrigger={cardRefreshTrigger}
         />
       )}
 

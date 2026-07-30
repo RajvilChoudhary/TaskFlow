@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { broadcastToBoard } = require('../utils/socket');
 
 // POST /api/cards
 const createCard = async (req, res, next) => {
@@ -23,7 +24,12 @@ const createCard = async (req, res, next) => {
       [cardId, board_id, 1, 'created_card', JSON.stringify({ title, list_id })]
     );
     const [[card]] = await pool.execute('SELECT * FROM cards WHERE id = ?', [cardId]);
-    res.status(201).json({ ...card, label_ids: [], member_ids: [], checklist_count: 0, checklist_done: 0, checklist_total: 0, comment_count: 0, attachment_count: 0 });
+    const payload = { ...card, label_ids: [], member_ids: [], checklist_count: 0, checklist_done: 0, checklist_total: 0, comment_count: 0, attachment_count: 0 };
+    
+    // Broadcast creation
+    broadcastToBoard(req, board_id, 'CARD_CREATE', payload);
+
+    res.status(201).json(payload);
   } catch (err) { next(err); }
 };
 
@@ -108,6 +114,9 @@ const updateCard = async (req, res, next) => {
     );
     
     const [[card]] = await pool.execute('SELECT * FROM cards WHERE id = ?', [id]);
+    
+    broadcastToBoard(req, existing.board_id, 'CARD_UPDATE', card);
+
     res.json(card);
   } catch (err) { next(err); }
 };
@@ -127,6 +136,9 @@ const moveCard = async (req, res, next) => {
       'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
       [id, existing.board_id, 1, 'moved_card', JSON.stringify({ list_id, from_list: existing.list_id })]
     );
+
+    broadcastToBoard(req, existing.board_id, 'CARD_MOVE', { id, list_id, position });
+
     res.json({ message: 'Card moved' });
   } catch (err) { next(err); }
 };
@@ -142,6 +154,9 @@ const deleteCard = async (req, res, next) => {
       'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
       [id, card.board_id, 1, 'archived_card', JSON.stringify({ title: card.title })]
     );
+
+    broadcastToBoard(req, card.board_id, 'CARD_DELETE', { id });
+
     res.json({ message: 'Card archived' });
   } catch (err) { next(err); }
 };
@@ -152,6 +167,12 @@ const addLabel = async (req, res, next) => {
     const { id } = req.params;
     const { label_id } = req.body;
     await pool.execute('INSERT IGNORE INTO card_labels (card_id, label_id) VALUES (?, ?)', [id, label_id]);
+    
+    const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [id]);
+    if (card) {
+      broadcastToBoard(req, card.board_id, 'CARD_UPDATE', { id, label_id, action: 'add_label' });
+    }
+
     res.json({ message: 'Label added' });
   } catch (err) { next(err); }
 };
@@ -159,6 +180,12 @@ const removeLabel = async (req, res, next) => {
   try {
     const { id, labelId } = req.params;
     await pool.execute('DELETE FROM card_labels WHERE card_id = ? AND label_id = ?', [id, labelId]);
+    
+    const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [id]);
+    if (card) {
+      broadcastToBoard(req, card.board_id, 'CARD_UPDATE', { id, labelId, action: 'remove_label' });
+    }
+
     res.json({ message: 'Label removed' });
   } catch (err) { next(err); }
 };
@@ -170,6 +197,12 @@ const addMember = async (req, res, next) => {
     const { user_id } = req.body;
     await pool.execute('INSERT IGNORE INTO card_members (card_id, user_id) VALUES (?, ?)', [id, user_id]);
     const [[user]] = await pool.execute('SELECT * FROM users WHERE id = ?', [user_id]);
+    
+    const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [id]);
+    if (card) {
+      broadcastToBoard(req, card.board_id, 'CARD_UPDATE', { id, user_id, action: 'add_member' });
+    }
+
     res.json(user);
   } catch (err) { next(err); }
 };
@@ -177,6 +210,12 @@ const removeMember = async (req, res, next) => {
   try {
     const { id, userId } = req.params;
     await pool.execute('DELETE FROM card_members WHERE card_id = ? AND user_id = ?', [id, userId]);
+    
+    const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [id]);
+    if (card) {
+      broadcastToBoard(req, card.board_id, 'CARD_UPDATE', { id, userId, action: 'remove_member' });
+    }
+
     res.json({ message: 'Member removed' });
   } catch (err) { next(err); }
 };
