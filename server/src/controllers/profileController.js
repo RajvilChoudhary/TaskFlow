@@ -2,17 +2,6 @@ const pool  = require('../config/db');
 const path  = require('path');
 const fs    = require('fs');
 
-/**
- * Run a one-time migration to add avatar_url if it doesn't exist
- */
-const ensureAvatarColumn = async () => {
-  try {
-    await pool.execute(
-      `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT NULL`
-    );
-  } catch (_) { /* column already exists */ }
-};
-ensureAvatarColumn();
 
 /**
  * Update current user's profile: name, avatar_color, avatar_url (preset emoji avatar or uploaded photo)

@@ -175,7 +175,7 @@ const guestLogin = async (req, res) => {
         'INSERT INTO boards (title, background, created_by) VALUES (?, ?, ?)',
         ['🚀 Product Roadmap (Demo)', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', user.id]
       );
-      await pool.execute('INSERT INTO board_members (board_id, user_id, role) VALUES (?, ?, ?)', [b1.insertId, user.id, 'owner']);
+      await pool.execute('INSERT INTO board_members (board_id, user_id, role) VALUES (?, ?, ?)', [b1.insertId, user.id, 'admin']);
 
       const [l1] = await pool.execute('INSERT INTO lists (board_id, title, position) VALUES (?, ?, ?)', [b1.insertId, '📋 Backlog', 1]);
       const [l2] = await pool.execute('INSERT INTO lists (board_id, title, position) VALUES (?, ?, ?)', [b1.insertId, '⚙️ In Progress', 2]);
@@ -190,7 +190,7 @@ const guestLogin = async (req, res) => {
         'INSERT INTO boards (title, background, created_by) VALUES (?, ?, ?)',
         ['🎯 Team Sprint Board (Demo)', 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', user.id]
       );
-      await pool.execute('INSERT INTO board_members (board_id, user_id, role) VALUES (?, ?, ?)', [b2.insertId, user.id, 'owner']);
+      await pool.execute('INSERT INTO board_members (board_id, user_id, role) VALUES (?, ?, ?)', [b2.insertId, user.id, 'admin']);
 
       const [bl1] = await pool.execute('INSERT INTO lists (board_id, title, position) VALUES (?, ?, ?)', [b2.insertId, 'To Do', 1]);
       const [bl2] = await pool.execute('INSERT INTO lists (board_id, title, position) VALUES (?, ?, ?)', [b2.insertId, 'Doing', 2]);
