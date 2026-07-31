@@ -11,7 +11,7 @@ import { config } from '../../config';
  *   style       — extra inline styles
  *   title       — tooltip text (defaults to user.name)
  */
-export default function UserAvatar({ user, size = 'md', className = '', style = {}, title }) {
+export default function UserAvatar({ user, size = 'md', className = '', style = {}, title, ...rest }) {
   if (!user) return null;
 
   const sizeClass = size === 'sm' ? 'avatar-sm' : size === 'lg' ? 'avatar-lg' : '';
@@ -24,12 +24,8 @@ export default function UserAvatar({ user, size = 'md', className = '', style = 
       <div
         className={`avatar ${sizeClass} ${className}`}
         title={tooltip}
-        style={{
-          background: 'transparent',
-          overflow: 'hidden',
-          padding: 0,
-          ...style,
-        }}
+        style={{ background: 'transparent', overflow: 'hidden', padding: 0, ...style }}
+        {...rest}
       >
         <img
           src={`${config.ASSET_URL}${avatarUrl}`}
@@ -48,13 +44,14 @@ export default function UserAvatar({ user, size = 'md', className = '', style = 
         title={tooltip}
         style={{
           background: user.avatar_color || '#7C5CBF',
-          fontSize: size === 'sm' ? '12px' : size === 'lg' ? '22px' : '16px',
+          fontSize: size === 'sm' ? '14px' : size === 'lg' ? '24px' : '18px',
           lineHeight: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           ...style,
         }}
+        {...rest}
       >
         {avatarUrl}
       </div>
@@ -67,6 +64,7 @@ export default function UserAvatar({ user, size = 'md', className = '', style = 
       className={`avatar ${sizeClass} ${className}`}
       title={tooltip}
       style={{ background: user.avatar_color || '#7C5CBF', ...style }}
+      {...rest}
     >
       {user.initials || (user.name ? user.name[0].toUpperCase() : '?')}
     </div>

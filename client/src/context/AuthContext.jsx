@@ -12,7 +12,10 @@ export function AuthProvider({ children }) {
     if (token) {
       getCurrentUser()
         .then(res => {
-          setUser(res.data.user);
+          const freshUser = res.data.user;
+          setUser(freshUser);
+          // Keep localStorage in sync so socket presence & other non-React code see the latest avatar_url
+          localStorage.setItem('user', JSON.stringify(freshUser));
         })
         .catch(() => {
           localStorage.removeItem('token');
