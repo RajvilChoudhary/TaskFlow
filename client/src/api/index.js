@@ -7,15 +7,17 @@ const api = axios.create({
 });
 
 // Add auth and socket interceptor to include JWT token and Socket ID in requests
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((reqConfig) => {
   const token = localStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    reqConfig.headers.set('Authorization', `Bearer ${token}`);
   }
   if (window.activeSocketId) {
-    config.headers['X-Socket-ID'] = window.activeSocketId;
+    reqConfig.headers.set('X-Socket-ID', window.activeSocketId);
   }
-  return config;
+  return reqConfig;
+}, (error) => {
+  return Promise.reject(error);
 });
 
 // ===================== BOARDS =====================
