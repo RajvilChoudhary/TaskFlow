@@ -83,6 +83,14 @@ export const register = (data) => api.post('/auth/register', data);
 export const guestLogin = () => api.post('/auth/guest');
 export const getCurrentUser = () => api.get('/auth/me');
 
+// ===================== PROFILE =====================
+export const updateProfile = (data) => api.patch('/profile', data);
+export const uploadAvatar = (file) => {
+  const form = new FormData();
+  form.append('photo', file);
+  return api.post('/profile/photo', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+};
+
 // ===================== INVITATIONS =====================
 export const sendInvitation = (data) => api.post('/invitations', data);
 export const getInvitations = () => api.get('/invitations');

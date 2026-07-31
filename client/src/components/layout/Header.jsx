@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { getBoards, createBoard, globalSearch } from '../../api';
 import InvitationInbox from '../ui/InvitationInbox';
+import ProfileModal from '../ui/ProfileModal';
 import './Header.css';
 
 const BACKGROUNDS = [
@@ -27,6 +28,7 @@ export default function Header() {
   const [showCreate, setShowCreate]       = useState(false);
   const [showBoards, setShowBoards]       = useState(false);
   const [showProfile, setShowProfile]     = useState(false);
+  const [showProfileModal, setProfileModal] = useState(false);
   const [boards, setBoards]               = useState([]);
   const [newTitle, setNewTitle]           = useState('');
   const [selectedBg, setSelectedBg]       = useState(BACKGROUNDS[0]);
@@ -276,18 +278,39 @@ export default function Header() {
         <div className="header-profile-wrap" ref={profileRef}>
           <div 
             className="avatar-glow cursor-pointer select-none" 
-            style={{ background: user?.avatar_color || currentUser?.avatar_color || '#7C5CBF' }}
+            style={{
+              background: (user?.avatar_url && !user.avatar_url.startsWith('/uploads')) ? 'transparent' : (user?.avatar_color || '#7C5CBF'),
+              overflow: 'hidden',
+              fontSize: user?.avatar_url ? '22px' : undefined
+            }}
             onClick={() => setShowProfile(!showProfile)}
             title={user?.name || 'Profile'}
           >
-            {user?.initials || currentUser?.initials || '?'}
+            {user?.avatar_url ? (
+              user.avatar_url.startsWith('/uploads') ? (
+                <img src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || ''}${user.avatar_url}`} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+              ) : user.avatar_url
+            ) : (
+              user?.initials || currentUser?.initials || '?'
+            )}
           </div>
 
           {showProfile && (
             <div className="profile-dropdown dropdown-menu">
               <div className="profile-dropdown-user">
-                <div className="avatar avatar-lg" style={{ background: user?.avatar_color || '#7C5CBF' }}>
-                  {user?.initials || '?'}
+                <div className="avatar avatar-lg" style={{
+                  background: (user?.avatar_url && !user.avatar_url.startsWith('/uploads')) ? 'transparent' : (user?.avatar_color || '#7C5CBF'),
+                  overflow: 'hidden',
+                  fontSize: user?.avatar_url ? '28px' : undefined,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  {user?.avatar_url ? (
+                    user.avatar_url.startsWith('/uploads') ? (
+                      <img src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || ''}${user.avatar_url}`} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                    ) : user.avatar_url
+                  ) : (
+                    user?.initials || '?'
+                  )}
                 </div>
                 <div className="profile-details">
                   <div className="profile-name">{user?.name || 'TaskFlow User'}</div>
@@ -297,6 +320,11 @@ export default function Header() {
               </div>
               
               <div className="dropdown-divider"></div>
+
+              <button className="dropdown-item" onClick={() => { setShowProfile(false); setProfileModal(true); }}>
+                <span className="material-symbols-outlined text-sm">manage_accounts</span>
+                Edit Profile
+              </button>
               
               {user?.role === 'admin' && (
                 <Link to="/admin" className="dropdown-item" onClick={() => setShowProfile(false)}>
@@ -312,6 +340,8 @@ export default function Header() {
             </div>
           )}
         </div>
+
+        {showProfileModal && <ProfileModal onClose={() => setProfileModal(false)} />}
       </div>
     </header>
   );

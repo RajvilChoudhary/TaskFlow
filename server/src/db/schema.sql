@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   email        VARCHAR(150)  NOT NULL UNIQUE,
   initials     VARCHAR(4)    NOT NULL,
   avatar_color VARCHAR(7)    NOT NULL DEFAULT '#7C5CBF',
+  avatar_url   TEXT          DEFAULT NULL,
   created_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

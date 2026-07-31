@@ -63,6 +63,7 @@ app.use('/uploads', express.static(uploadsDir));
 
 // Routes
 app.use('/api/auth',            require('./routes/auth'));
+app.use('/api/profile',         require('./routes/profile'));
 app.use('/api/invitations',     require('./routes/invitations'));
 app.use('/api/admin',           require('./routes/admin'));
 app.use('/api/boards',          require('./routes/boards'));
