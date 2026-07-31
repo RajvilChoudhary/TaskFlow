@@ -1,6 +1,6 @@
 # TaskFlow
 
-A full-stack Kanban project management app with a modern UI/UX built with React, Node.js/Express, and MySQL.
+A full-stack collaborative Kanban project management application with a modern UI/UX built with React, Node.js/Express, MySQL, and WebSockets.
 
 ## 🚀 Live Demo
 - **Frontend (Vercel)**: [taskflow-kanban-task-management.vercel.app](https://taskflow-kanban-task-management.vercel.app/)
@@ -11,10 +11,13 @@ A full-stack Kanban project management app with a modern UI/UX built with React,
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + Vite, React Router v6 |
+| Frontend | React 19 + Vite, React Router v7 |
 | Styling | Vanilla CSS (dark theme, CSS variables) |
-| Drag & Drop | `@hello-pangea/dnd` (React 18 compatible fork of react-beautiful-dnd) |
+| Live Sync | `socket.io-client` for real-time multiplayer updates & presence |
+| Drag & Drop | `@hello-pangea/dnd` (React 19 compatible fork of react-beautiful-dnd) |
 | Backend | Node.js + Express.js |
+| Real-time Server | `socket.io` for event broadcasting |
+| Authentication | JSON Web Tokens (JWT) + `bcryptjs` password hashing |
 | Database | MySQL 8 + `mysql2/promise` connection pool |
 | File Uploads | `multer` (local disk storage) |
 
@@ -31,17 +34,18 @@ A full-stack Kanban project management app with a modern UI/UX built with React,
 - **Due Dates** — Set due dates with overdue/upcoming visual indicators
 - **Checklists** — Multiple checklists per card with progress bar and item toggle
 - **Comments** — Add and delete comments on cards
-- **Activity Log** — Auto-logged activity feed per card
+- **Activity Log** — Auto-logged user activity feed per card (dynamically attributed to action authors)
 - **Attachments** — Upload and download file attachments on cards
 - **Card Covers** — Color covers on cards via the card modal
 - **Search** — Search cards by title within a board (header search bar)
 - **Filter** — Filter cards by label, member, or due date status
 
-### Bonus Features
-- Responsive design (mobile/tablet/desktop)
-- Board background customization (gradient + solid color themes)
-- Board picker dropdown in the header
-- Background preview when creating a board
+### Real-Time & Social Features
+- **JWT Authentication** — Full user signup, login, and quick-auth Guest login session persistence
+- **Collaborative Live Sync** — Real-time board state updates across all active users on the board via WebSockets
+- **Live Board Presence** — Live indicator bar displaying avatars of active board viewers in real-time
+- **Custom User Profiles** — User avatar profile photos (via upload) or curated preset emojis (e.g. 🦝)
+- **Universal Avatar Badges** — Avatars rendered across card items, comment threads, activity logs, presence, filters, and header profile menus
 
 ---
 
@@ -54,6 +58,7 @@ Key design decisions:
 - **Soft delete (archive)** — Cards and lists have `archived BOOLEAN` to archive instead of hard-delete
 - **JSON activity data** — `activity_log.data` stored as JSON for flexible contextual payloads
 - **Cascade deletes** — Foreign keys use `ON DELETE CASCADE` to maintain referential integrity
+- **Avatar Support** — `users.avatar_url` supports both custom path file uploads and local preset emoji strings
 
 ---
 
@@ -79,12 +84,18 @@ npm install
 ### 2. Configure Environment
 
 Edit `server/.env`:
-```
+```env
 PORT=5000
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=taskflow
+JWT_SECRET=your_jwt_secret_key
+```
+
+Edit `client/.env` (optional, if backend URL varies):
+```env
+VITE_API_BASE_URL=http://localhost:5000
 ```
 
 ### 3. Set Up Database
@@ -98,23 +109,19 @@ npm run db:setup
 
 This will:
 - Create all 13 tables
-- Seed 5 users, 3 boards, 12 lists, 21 cards, labels, checklists, and comments
+- Seed 5 users, 3 boards, 12 lists, 21 cards, labels, checklists, comments, and member associations
 
 ### 4. Run the Application
 
-**Terminal 1 — Backend:**
+**Run Client & Server Together:**
 ```bash
-cd server
 npm run dev
-# → http://localhost:5000
+# Starts backend server (http://localhost:5000) and Vite frontend (http://localhost:5173) concurrently
 ```
 
-**Terminal 2 — Frontend:**
-```bash
-cd client
-npm run dev
-# → http://localhost:5173
-```
+Alternatively, run separately:
+- **Backend**: `cd server && npm run dev`
+- **Frontend**: `cd client && npm run dev`
 
 Open **http://localhost:5173** in your browser.
 
@@ -124,6 +131,12 @@ Open **http://localhost:5173** in your browser.
 
 | Resource | Methods |
 |---|---|
+| `/api/auth/register` | POST (Create new user) |
+| `/api/auth/login` | POST (Login credentials) |
+| `/api/auth/guest` | POST (Instantly log in with guest session) |
+| `/api/auth/me` | GET (Get logged-in user context) |
+| `/api/profile` | PATCH (Update user details/preset avatar) |
+| `/api/profile/photo` | POST (Upload custom profile picture) |
 | `/api/boards` | GET, POST |
 | `/api/boards/:id` | GET (full tree), PUT, DELETE |
 | `/api/lists` | POST, PUT /:id, DELETE /:id |
@@ -138,18 +151,16 @@ Open **http://localhost:5173** in your browser.
 
 ---
 
-## Default User
+## User Context
 
-**Rajvil Choudhary (RC)** — ID: 1 (no login required, auto-assigned as current user)
-
-Other pre-seeded members: Alice Johnson, Bob Smith, Carol White, David Brown
+- **Guest Account** — Auto-seeded for quick review (`guest@taskflow.com` / `guest123` or via Guest login button)
+- **Pre-seeded Members** — Rajvil Choudhary, Alice Johnson, Bob Smith, Carol White, David Brown
 
 ---
 
-## Assumptions
+## Technical Implementations
 
-1. Authentication is omitted; user ID 1 (Rajvil) is assumed to be the logged-in user
-2. File attachments are stored locally in `server/uploads/` and served statically
-3. Board backgrounds are CSS gradient strings or hex colors
-4. The `position` column uses floating-point midpoint insertion for drag-and-drop ordering
-5. "Delete" operations are soft-deletes (archive) for lists and cards; hard-delete for boards
+1. **Floating-point Positioning**: List/card reorder requests compute a midpoint between target nodes, reducing updates to a single database row.
+2. **WebSocket Sync**: Broadcast triggers emit targeted changes via `X-Socket-ID` header-based exclusions so origin clients don't double-refresh, ensuring seamless updates for other participants.
+3. **Flexible User Avatars**: Dynamic `UserAvatar` React component detects storage type to handle local file upload endpoints, raw unicode emojis, or initials fallback color rendering dynamically.
+
