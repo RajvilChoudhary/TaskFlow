@@ -21,7 +21,7 @@ const createCard = async (req, res, next) => {
     const cardId = result.insertId;
     await pool.execute(
       'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
-      [cardId, board_id, 1, 'created_card', JSON.stringify({ title, list_id })]
+      [cardId, board_id, req.user.id, 'created_card', JSON.stringify({ title, list_id })]
     );
     const [[card]] = await pool.execute('SELECT * FROM cards WHERE id = ?', [cardId]);
     const payload = { ...card, label_ids: [], member_ids: [], checklist_count: 0, checklist_done: 0, checklist_total: 0, comment_count: 0, attachment_count: 0 };
@@ -64,7 +64,7 @@ const getCardById = async (req, res, next) => {
     }
 
     const [comments] = await pool.execute(`
-      SELECT c.*, u.name AS user_name, u.initials, u.avatar_color
+      SELECT c.*, u.name AS user_name, u.initials, u.avatar_color, u.avatar_url
       FROM comments c JOIN users u ON u.id = c.user_id
       WHERE c.card_id = ? ORDER BY c.created_at DESC
     `, [id]);
@@ -76,7 +76,7 @@ const getCardById = async (req, res, next) => {
     `, [id]);
 
     const [activity] = await pool.execute(`
-      SELECT al.*, u.name AS user_name, u.initials, u.avatar_color
+      SELECT al.*, u.name AS user_name, u.initials, u.avatar_color, u.avatar_url
       FROM activity_log al JOIN users u ON u.id = al.user_id
       WHERE al.card_id = ? ORDER BY al.created_at DESC LIMIT 50
     `, [id]);
@@ -115,6 +115,15 @@ const updateCard = async (req, res, next) => {
     
     const [[card]] = await pool.execute('SELECT * FROM cards WHERE id = ?', [id]);
     
+    // Log card completed/stricken activity
+    if (completed !== undefined && completed !== existing.completed) {
+      const action = completed ? 'completed_card' : 'uncompleted_card';
+      await pool.execute(
+        'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
+        [id, existing.board_id, req.user.id, action, JSON.stringify({ title: card.title })]
+      );
+    }
+
     broadcastToBoard(req, existing.board_id, 'CARD_UPDATE', card);
 
     res.json(card);
@@ -134,7 +143,7 @@ const moveCard = async (req, res, next) => {
     );
     await pool.execute(
       'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
-      [id, existing.board_id, 1, 'moved_card', JSON.stringify({ list_id, from_list: existing.list_id })]
+      [id, existing.board_id, req.user.id, 'moved_card', JSON.stringify({ list_id, from_list: existing.list_id })]
     );
 
     broadcastToBoard(req, existing.board_id, 'CARD_MOVE', { id, list_id, position });
@@ -152,7 +161,7 @@ const deleteCard = async (req, res, next) => {
     await pool.execute('UPDATE cards SET archived = 1 WHERE id = ?', [id]);
     await pool.execute(
       'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
-      [id, card.board_id, 1, 'archived_card', JSON.stringify({ title: card.title })]
+      [id, card.board_id, req.user.id, 'archived_card', JSON.stringify({ title: card.title })]
     );
 
     broadcastToBoard(req, card.board_id, 'CARD_DELETE', { id });
@@ -169,7 +178,12 @@ const addLabel = async (req, res, next) => {
     await pool.execute('INSERT IGNORE INTO card_labels (card_id, label_id) VALUES (?, ?)', [id, label_id]);
     
     const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [id]);
-    if (card) {
+    const [[label]] = await pool.execute('SELECT name FROM labels WHERE id = ?', [label_id]);
+    if (card && label) {
+      await pool.execute(
+        'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
+        [id, card.board_id, req.user.id, 'added_label', JSON.stringify({ label_name: label.name })]
+      );
       broadcastToBoard(req, card.board_id, 'CARD_UPDATE', { id, label_id, action: 'add_label' });
     }
 
@@ -179,10 +193,15 @@ const addLabel = async (req, res, next) => {
 const removeLabel = async (req, res, next) => {
   try {
     const { id, labelId } = req.params;
+    const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [id]);
+    const [[label]] = await pool.execute('SELECT name FROM labels WHERE id = ?', [labelId]);
     await pool.execute('DELETE FROM card_labels WHERE card_id = ? AND label_id = ?', [id, labelId]);
     
-    const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [id]);
-    if (card) {
+    if (card && label) {
+      await pool.execute(
+        'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
+        [id, card.board_id, req.user.id, 'removed_label', JSON.stringify({ label_name: label.name })]
+      );
       broadcastToBoard(req, card.board_id, 'CARD_UPDATE', { id, labelId, action: 'remove_label' });
     }
 

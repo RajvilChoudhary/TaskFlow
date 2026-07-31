@@ -13,7 +13,7 @@ const createChecklist = async (req, res, next) => {
     );
     await pool.execute(
       'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
-      [card_id, card.board_id, 1, 'added_checklist', JSON.stringify({ title })]
+      [card_id, card.board_id, req.user.id, 'added_checklist', JSON.stringify({ title })]
     );
     const [[checklist]] = await pool.execute('SELECT * FROM checklists WHERE id = ?', [result.insertId]);
 

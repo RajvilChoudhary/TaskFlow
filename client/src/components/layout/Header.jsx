@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getBoards, createBoard, globalSearch } from '../../api';
 import InvitationInbox from '../ui/InvitationInbox';
 import ProfileModal from '../ui/ProfileModal';
+import UserAvatar from '../ui/UserAvatar';
 import './Header.css';
 
 const BACKGROUNDS = [
@@ -276,42 +277,18 @@ export default function Header() {
 
         {/* Interactive User profile dropdown */}
         <div className="header-profile-wrap" ref={profileRef}>
-          <div 
-            className="avatar-glow cursor-pointer select-none" 
-            style={{
-              background: (user?.avatar_url && !user.avatar_url.startsWith('/uploads')) ? 'transparent' : (user?.avatar_color || '#7C5CBF'),
-              overflow: 'hidden',
-              fontSize: user?.avatar_url ? '22px' : undefined
-            }}
+          <UserAvatar
+            user={user}
+            size="md"
+            className="avatar-glow cursor-pointer select-none"
             onClick={() => setShowProfile(!showProfile)}
             title={user?.name || 'Profile'}
-          >
-            {user?.avatar_url ? (
-              user.avatar_url.startsWith('/uploads') ? (
-                <img src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || ''}${user.avatar_url}`} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
-              ) : user.avatar_url
-            ) : (
-              user?.initials || currentUser?.initials || '?'
-            )}
-          </div>
+          />
 
           {showProfile && (
             <div className="profile-dropdown dropdown-menu">
               <div className="profile-dropdown-user">
-                <div className="avatar avatar-lg" style={{
-                  background: (user?.avatar_url && !user.avatar_url.startsWith('/uploads')) ? 'transparent' : (user?.avatar_color || '#7C5CBF'),
-                  overflow: 'hidden',
-                  fontSize: user?.avatar_url ? '28px' : undefined,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  {user?.avatar_url ? (
-                    user.avatar_url.startsWith('/uploads') ? (
-                      <img src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api','') || ''}${user.avatar_url}`} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
-                    ) : user.avatar_url
-                  ) : (
-                    user?.initials || '?'
-                  )}
-                </div>
+                <UserAvatar user={user} size="lg" />
                 <div className="profile-details">
                   <div className="profile-name">{user?.name || 'TaskFlow User'}</div>
                   <div className="profile-email">{user?.email || ''}</div>

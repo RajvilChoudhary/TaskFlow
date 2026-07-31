@@ -1,4 +1,5 @@
 import React from 'react';
+import UserAvatar from './UserAvatar';
 import './FilterBar.css';
 
 export default function FilterBar({ labels, members, filterState, onChange, onClose }) {
@@ -45,11 +46,11 @@ export default function FilterBar({ labels, members, filterState, onChange, onCl
               <button
                 key={m.id}
                 className={`avatar avatar-sm filter-member ${filterState.member_ids.includes(m.id) ? 'selected' : ''}`}
-                style={{ background: m.avatar_color, opacity: filterState.member_ids.includes(m.id) ? 1 : 0.5 }}
+                style={{ opacity: filterState.member_ids.includes(m.id) ? 1 : 0.55, padding: 0, border: 'none', cursor: 'pointer' }}
                 onClick={() => toggleMember(m.id)}
                 title={m.name}
               >
-                {m.initials}
+                <UserAvatar user={m} size="sm" style={{ pointerEvents: 'none' }} />
               </button>
             ))}
           </div>

@@ -17,7 +17,7 @@ const createList = async (req, res, next) => {
     const [[list]] = await pool.execute('SELECT * FROM lists WHERE id = ?', [result.insertId]);
     await pool.execute(
       'INSERT INTO activity_log (board_id, user_id, action, data) VALUES (?, ?, ?, ?)',
-      [board_id, 1, 'created_list', JSON.stringify({ title })]
+      [board_id, req.user.id, 'created_list', JSON.stringify({ title })]
     );
     
     // Broadcast real-time list creation

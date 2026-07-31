@@ -48,6 +48,7 @@ const register = async (req, res) => {
         email, 
         initials, 
         avatar_color: '#7C5CBF',
+        avatar_url: null,
         role: 'user'
       },
       token
@@ -109,6 +110,7 @@ const login = async (req, res) => {
         email: user.email,
         initials: user.initials,
         avatar_color: user.avatar_color,
+        avatar_url: user.avatar_url || null,
         role: user.role || 'user'
       },
       token
@@ -212,6 +214,7 @@ const guestLogin = async (req, res) => {
         email: user.email,
         initials: user.initials,
         avatar_color: user.avatar_color,
+        avatar_url: user.avatar_url || null,
         role: user.role || 'user'
       },
       token

@@ -12,11 +12,11 @@ const uploadAttachment = async (req, res, next) => {
     const url = `/uploads/${req.file.filename}`;
     const [result] = await pool.execute(
       'INSERT INTO attachments (card_id, user_id, filename, original_name, url) VALUES (?, ?, ?, ?, ?)',
-      [card_id, 1, req.file.filename, req.file.originalname, url]
+      [card_id, req.user.id, req.file.filename, req.file.originalname, url]
     );
     await pool.execute(
       'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
-      [card_id, card.board_id, 1, 'added_attachment', JSON.stringify({ name: req.file.originalname })]
+      [card_id, card.board_id, req.user.id, 'added_attachment', JSON.stringify({ name: req.file.originalname })]
     );
     const [[attachment]] = await pool.execute('SELECT * FROM attachments WHERE id = ?', [result.insertId]);
 

@@ -11,6 +11,8 @@ import {
   getActivity
 } from '../../api';
 import { config } from '../../config';
+import { useAuth } from '../../context/AuthContext';
+import UserAvatar from '../ui/UserAvatar';
 import './CardModal.css';
 
 const LABEL_COLORS = [
@@ -18,7 +20,26 @@ const LABEL_COLORS = [
   '#579DFF','#6CC3E0','#94C748','#E774BB','#8C9BAB',
 ];
 
+/** Convert snake_case action + data to a human-readable sentence */
+function formatActivityAction(a) {
+  const d = (() => { try { return typeof a.data === 'string' ? JSON.parse(a.data) : a.data; } catch { return {}; } })();
+  switch (a.action) {
+    case 'created_card':    return 'created this card';
+    case 'moved_card':      return 'moved this card';
+    case 'archived_card':   return 'archived this card';
+    case 'completed_card':  return 'marked this card complete ✅';
+    case 'uncompleted_card':return 'marked this card incomplete';
+    case 'added_label':     return `added label "${d.label_name || ''}"`;
+    case 'removed_label':   return `removed label "${d.label_name || ''}"`;
+    case 'added_checklist': return `added checklist "${d.title || ''}"`;
+    case 'added_comment':   return 'left a comment';
+    case 'added_attachment':return `attached "${d.name || 'a file'}"`;
+    default:                return a.action.replace(/_/g, ' ');
+  }
+}
+
 export default function CardModal({ card: initialCard, labels: boardLabels, boardMembers, onClose, onCardUpdated, onCardDeleted, onLabelsChanged, refreshTrigger }) {
+  const { user: authUser } = useAuth();
   const [card, setCard]             = useState(null);
   const [loading, setLoading]       = useState(true);
   const [labels, setLabels]         = useState(boardLabels);
@@ -319,7 +340,7 @@ export default function CardModal({ card: initialCard, labels: boardLabels, boar
                   <div className="section-title">Members</div>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                     {cardMembers.map(m => (
-                      <div key={m.id} className="avatar" style={{ background: m.avatar_color }} title={m.name}>{m.initials}</div>
+                      <UserAvatar key={m.id} user={m} size="md" title={m.name} />
                     ))}
                     <button className="cm-add-pill" onClick={() => setShowMemberPicker(true)}>+</button>
                   </div>
@@ -453,7 +474,7 @@ export default function CardModal({ card: initialCard, labels: boardLabels, boar
                 <h3 className="cm-section-heading" style={{ marginBottom: 12 }}>Activity</h3>
                 {/* Add comment */}
                 <form className="comment-form" onSubmit={handleAddComment}>
-                  <div className="avatar" style={{ background: '#7C5CBF', flexShrink: 0 }}>RC</div>
+                  <UserAvatar user={authUser} size="sm" />
                   <div style={{ flex: 1 }}>
                     <textarea
                       id="add-comment-input"
@@ -474,7 +495,7 @@ export default function CardModal({ card: initialCard, labels: boardLabels, boar
                 <div className="activity-feed">
                   {card.comments?.map(c => (
                     <div key={c.id} className="activity-item">
-                      <div className="avatar avatar-sm" style={{ background: c.avatar_color }}>{c.initials}</div>
+                      <UserAvatar user={{ name: c.user_name, initials: c.initials, avatar_color: c.avatar_color, avatar_url: c.avatar_url }} size="sm" />
                       <div className="activity-content">
                         <div className="activity-header">
                           <span className="activity-user">{c.user_name}</span>
@@ -488,11 +509,11 @@ export default function CardModal({ card: initialCard, labels: boardLabels, boar
 
                   {card.activity?.filter(a => a.action !== 'added_comment').map(a => (
                     <div key={a.id} className="activity-item">
-                      <div className="avatar avatar-sm" style={{ background: a.avatar_color }}>{a.initials}</div>
+                      <UserAvatar user={{ name: a.user_name, initials: a.initials, avatar_color: a.avatar_color, avatar_url: a.avatar_url }} size="sm" />
                       <div className="activity-content">
                         <span className="activity-user">{a.user_name} </span>
-                        <span className="activity-action">{a.action.replace(/_/g, ' ')}</span>
-                        <span className="activity-time"> · {dayjs(a.created_at).format('MMM D')}</span>
+                        <span className="activity-action">{formatActivityAction(a)}</span>
+                        <span className="activity-time"> · {dayjs(a.created_at).format('MMM D, h:mm A')}</span>
                       </div>
                     </div>
                   ))}
@@ -567,7 +588,7 @@ export default function CardModal({ card: initialCard, labels: boardLabels, boar
                   const assigned = card.members.some(cm => cm.id === m.id);
                   return (
                     <div key={m.id} className="member-picker-row" onClick={() => toggleMember(m.id)}>
-                      <div className="avatar avatar-sm" style={{ background: m.avatar_color }}>{m.initials}</div>
+                      <UserAvatar user={m} size="sm" />
                       <span>{m.name}</span>
                       {assigned && <span style={{ marginLeft: 'auto', color: 'var(--btn-success)' }}>✓</span>}
                     </div>

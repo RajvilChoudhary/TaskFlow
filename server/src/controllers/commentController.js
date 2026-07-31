@@ -5,7 +5,7 @@ const { broadcastToBoard } = require('../utils/socket');
 const getComments = async (req, res, next) => {
   try {
     const [comments] = await pool.execute(`
-      SELECT c.*, u.name AS user_name, u.initials, u.avatar_color
+      SELECT c.*, u.name AS user_name, u.initials, u.avatar_color, u.avatar_url
       FROM comments c JOIN users u ON u.id = c.user_id
       WHERE c.card_id = ? ORDER BY c.created_at DESC
     `, [req.params.id]);
@@ -21,14 +21,14 @@ const addComment = async (req, res, next) => {
     const [[card]] = await pool.execute('SELECT board_id FROM cards WHERE id = ?', [card_id]);
     const [result] = await pool.execute(
       'INSERT INTO comments (card_id, user_id, content) VALUES (?, ?, ?)',
-      [card_id, 1, content]
+      [card_id, req.user.id, content]
     );
     await pool.execute(
       'INSERT INTO activity_log (card_id, board_id, user_id, action, data) VALUES (?, ?, ?, ?, ?)',
-      [card_id, card.board_id, 1, 'added_comment', JSON.stringify({ content: content.substring(0, 50) })]
+      [card_id, card.board_id, req.user.id, 'added_comment', JSON.stringify({ content: content.substring(0, 50) })]
     );
     const [[row]] = await pool.execute(`
-      SELECT c.*, u.name AS user_name, u.initials, u.avatar_color
+      SELECT c.*, u.name AS user_name, u.initials, u.avatar_color, u.avatar_url
       FROM comments c JOIN users u ON u.id = c.user_id
       WHERE c.id = ?
     `, [result.insertId]);
@@ -63,7 +63,7 @@ const deleteComment = async (req, res, next) => {
 const getActivity = async (req, res, next) => {
   try {
     const [activity] = await pool.execute(`
-      SELECT al.*, u.name AS user_name, u.initials, u.avatar_color
+      SELECT al.*, u.name AS user_name, u.initials, u.avatar_color, u.avatar_url
       FROM activity_log al JOIN users u ON u.id = al.user_id
       WHERE al.card_id = ? ORDER BY al.created_at DESC LIMIT 50
     `, [req.params.id]);

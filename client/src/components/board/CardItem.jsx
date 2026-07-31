@@ -1,6 +1,6 @@
 import React from 'react';
 import dayjs from 'dayjs';
-import { config } from '../../config';
+import UserAvatar from '../ui/UserAvatar';
 import './CardItem.css';
 
 export default function CardItem({ card, labelMap, memberMap, onClick, onToggleComplete }) {
@@ -102,11 +102,7 @@ export default function CardItem({ card, labelMap, memberMap, onClick, onToggleC
                 {memberIds.slice(0, 3).map(mid => {
                   const m = memberMap[mid];
                   if (!m) return null;
-                  return (
-                    <div key={mid} className="avatar avatar-sm" style={{ background: m.avatar_color }} title={m.name}>
-                      {m.initials}
-                    </div>
-                  );
+                  return <UserAvatar key={mid} user={m} size="sm" title={m.name} />;
                 })}
               </div>
             )}

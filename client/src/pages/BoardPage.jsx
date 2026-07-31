@@ -10,10 +10,13 @@ import FilterBar from '../components/ui/FilterBar';
 import InboxSidebar from '../components/board/InboxSidebar';
 import BottomNav from '../components/layout/BottomNav';
 import ShareModal from '../components/board/ShareModal';
+import UserAvatar from '../components/ui/UserAvatar';
+import { useAuth } from '../context/AuthContext';
 import './BoardPage.css';
 
 export default function BoardPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -151,6 +154,13 @@ export default function BoardPage() {
     // socketBoardRef prevents duplicate connections on fetchBoard re-calls.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, loading]);
+
+  // Re-emit join-board when active user details change (e.g. avatar update)
+  useEffect(() => {
+    if (socketRef.current) {
+      socketRef.current.emit('join-board', { boardId: id, user });
+    }
+  }, [user, id]);
 
   // Auto-open card from ?openCard= query param (from search)
   useEffect(() => {
@@ -380,7 +390,7 @@ export default function BoardPage() {
                   {/* Static board members */}
                   <div className="board-members">
                     {members.slice(0, 4).map(m => (
-                      <div key={m.id} className="avatar avatar-sm" style={{ background: m.avatar_color }} title={m.name}>{m.initials}</div>
+                      <UserAvatar key={m.id} user={m} size="sm" title={m.name} />
                     ))}
                     {members.length > 4 && <div className="avatar avatar-sm" style={{ background: 'var(--bg-input)' }}>+{members.length - 4}</div>}
                   </div>
@@ -390,14 +400,13 @@ export default function BoardPage() {
                       <span className="presence-dot-ring" />
                       <div className="presence-avatars">
                         {activeUsers.slice(0, 5).map(u => (
-                          <div
+                          <UserAvatar
                             key={u.socketId}
-                            className="avatar avatar-sm presence-avatar"
-                            style={{ background: u.avatar_color || '#7C5CBF' }}
+                            user={{ name: u.name || 'Someone', initials: u.initials || '?', avatar_color: u.avatar_color || '#7C5CBF', avatar_url: u.avatar_url }}
+                            size="sm"
+                            className="presence-avatar"
                             title={`${u.name || 'Someone'} (active)`}
-                          >
-                            {u.initials || '?'}
-                          </div>
+                          />
                         ))}
                       </div>
                       <span className="presence-label">{activeUsers.length} online</span>

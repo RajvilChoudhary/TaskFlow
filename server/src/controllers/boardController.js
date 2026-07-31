@@ -114,7 +114,7 @@ const getBoardById = async (req, res, next) => {
       'SELECT * FROM labels WHERE board_id = ?', [id]
     );
     const [members] = await pool.execute(`
-      SELECT u.*, bm.role FROM users u
+      SELECT u.id, u.name, u.initials, u.avatar_color, u.avatar_url, bm.role FROM users u
       JOIN board_members bm ON bm.user_id = u.id
       WHERE bm.board_id = ?
     `, [id]);
@@ -200,7 +200,7 @@ const getBoardMembers = async (req, res, next) => {
   try {
     const { id } = req.params;
     const [members] = await pool.execute(`
-      SELECT u.*, bm.role FROM users u
+      SELECT u.id, u.name, u.initials, u.avatar_color, u.avatar_url, bm.role FROM users u
       JOIN board_members bm ON bm.user_id = u.id
       WHERE bm.board_id = ?
     `, [id]);
