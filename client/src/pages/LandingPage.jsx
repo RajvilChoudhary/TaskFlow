@@ -220,7 +220,7 @@ export default function LandingPage() {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="#4EDEA3">
                   <path d="M3 3l7 18 3-7 7-3L3 3z"/>
                 </svg>
-                <div className="cursor-label glass-card">Sarah is moving card...</div>
+                <div className="cursor-label glass-card">Sarah has moved this card...</div>
               </div>
             </div>
           </section>
